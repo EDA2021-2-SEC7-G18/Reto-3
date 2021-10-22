@@ -33,6 +33,16 @@ El controlador se encarga de mediar entre la vista y el modelo.
 
 # Funciones para la carga de datos
 
+#Req 1
+
+#Req 2
+
+#Req 3
+
+#Req 4
+
+#Req 5
+
 # Funciones de ordenamiento
 
 # Funciones de consulta sobre el catálogo

@@ -43,6 +43,16 @@ los mismos.
 
 # Funciones para creacion de datos
 
+#Req 1
+
+#Req 2
+
+#Req 3
+
+#Req 4
+
+#Req 5
+
 # Funciones de consulta
 
 # Funciones utilizadas para comparar elementos dentro de una lista
