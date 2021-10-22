@@ -28,8 +28,10 @@
 import config as cf
 from DISClib.ADT import list as lt
 from DISClib.ADT import map as mp
+from DISClib.ADT import orderedmap as om
 from DISClib.DataStructures import mapentry as me
 from DISClib.Algorithms.Sorting import shellsort as sa
+from datetime import datetime
 assert cf
 
 """
@@ -38,9 +40,30 @@ los mismos.
 """
 
 # Construccion de modelos
+def newCatalog():
+    catalog = {'sightnings': None,
+    'dateIndex': None}
+    catalog = ['sightnings'] = lt.newList('ARRAY_LIST', cmpfunction=None)
+    catalog['cityIndex'] = mp.newMap(omaptype ='BST', comparefunction=compareDates)
+    return catalog
 
 # Funciones para agregar informacion al catalogo
+def newDataEntry(sightning):
+    entry = {''}
+def updateDateIndex(map, sightning):
+    city=sightning['city']
+    entry = om.get(map, city)
+    if entry is None:
+        cityentry = newDataEntry(sightning)
+        om.put(map, city, cityentry)
+    else:
+        cityentry = me.getValue(entry)
+    addDateIndex(cityentry, sightning)
+    return map
 
+def addCrime(catalog, sightning):
+    lt.addLast(catalog['sightning'], sightning)
+    updateDateIndex(catalog['dateIndex'], sightning) 
 # Funciones para creacion de datos
 
 #Req 1
@@ -56,5 +79,18 @@ los mismos.
 # Funciones de consulta
 
 # Funciones utilizadas para comparar elementos dentro de una lista
-
+def compareIds(id1, id2):
+    if (id1 == id2):
+        return 0
+    elif id1 > id2:
+        return 1
+    else:
+        return -1
+def compareDates(date1,date2):
+    if (date1 == date2):
+        return 0
+    elif (date1 > date2):
+        return 1
+    else:
+        return-1
 # Funciones de ordenamiento
