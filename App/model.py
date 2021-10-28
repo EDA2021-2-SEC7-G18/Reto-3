@@ -41,33 +41,39 @@ los mismos.
 
 # Construccion de modelos
 def newCatalog():
-    catalog = {'sightnings': None,
-    'dateIndex': None}
-    catalog = ['sightnings'] = lt.newList('ARRAY_LIST', cmpfunction=None)
-    catalog['cityIndex'] = mp.newMap(omaptype ='BST', comparefunction=compareDates)
+    catalog = {'cityIndex': None, 'sightnings':None}
+    catalog['cityIndex'] = om.newMap(omaptype='RBT', comparefunction=None)
+    catalog['sightnings'] = lt.newList('ARRAY_LIST',cmpfunction=None)
     return catalog
 
 # Funciones para agregar informacion al catalogo
-def newDataEntry(sightning):
-    entry = {''}
-def updateDateIndex(map, sightning):
-    city=sightning['city']
-    entry = om.get(map, city)
+def addSightning(catalog, sightning):
+    lt.addLast(catalog['sightnings'], sightning)
+def addDate(dateIndex, sightning):
+    date=sightning['datetime']
+    entry = om.get(dateIndex, date)
     if entry is None:
-        cityentry = newDataEntry(sightning)
-        om.put(map, city, cityentry)
+        Data= lt.newList('ARRAY_LIST', cmpfunction=None)
+        om.put(dateIndex, date, Data)
     else:
-        cityentry = me.getValue(entry)
-    addDateIndex(cityentry, sightning)
-    return map
+        Data = me.getValue(entry)
+    lt.addLast(Data, sightning)
 
-def addCrime(catalog, sightning):
-    lt.addLast(catalog['sightning'], sightning)
-    updateDateIndex(catalog['dateIndex'], sightning) 
+def updateCityIndex(catalog, sightning):
+    city=sightning['city']
+    entry = om.get(catalog['cityIndex'], city)
+    if entry is None:
+        dateIndex = om.newMap(omaptype='BST', comparefunction=compareDates)
+        om.put(catalog['cityIndex'], city, dateIndex)
+    else:
+        dateIndex = me.getValue(entry)
+    addDate(dateIndex, sightning)
+
 # Funciones para creacion de datos
 
 #Req 1
-
+def datecmp(date1, date2):
+    return datetime.strptime(date1, '%Y-%m-%d %H:%M:%S') < datetime.strptime(date2,'%Y-%m-%d %H:%M:%S')
 #Req 2
 
 #Req 3
@@ -87,9 +93,11 @@ def compareIds(id1, id2):
     else:
         return -1
 def compareDates(date1,date2):
-    if (date1 == date2):
+    date11=datetime.strptime(date1, '%Y-%m-%d %H:%M:%S')
+    date22=datetime.strptime(date2, '%Y-%m-%d %H:%M:%S')
+    if (date11 == date22):
         return 0
-    elif (date1 > date2):
+    elif (date11 > date22):
         return 1
     else:
         return-1

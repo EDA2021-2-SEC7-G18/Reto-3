@@ -24,6 +24,10 @@ import config as cf
 import sys
 import controller
 from DISClib.ADT import list as lt
+from DISClib.ADT import map as mp
+from DISClib.DataStructures import mapentry as me
+from DISClib.ADT import orderedmap as om
+from prettytable import PrettyTable
 assert cf
 
 
@@ -44,7 +48,11 @@ def printMenu():
     print("6- Contas los avistamientos de una Zona Geografica")
 
 catalog = None
+def initCatalog():
+    return controller.init()
 
+def loadAll(catalog):
+    return controller.loadAll(catalog)
 """
 Menu principal
 """
@@ -53,11 +61,36 @@ while True:
     inputs = input('Seleccione una opción para continuar\n')
     if int(inputs[0]) == 1:
         print("Cargando información de los archivos ....")
-
+        catalog=initCatalog()
+        loadAll(catalog)
     elif int(inputs[0]) == 2:
-        pass
+        city=str(input('Enter the city you want to consult'))
+        datecmp =controller.calldatecmp
+        entry = om.get(catalog['cityIndex'], city)
+        dateIndex = me.getValue(entry)
+        size=om.size(dateIndex)
+        keys = om.keySet(dateIndex)
+        numberofsightnings = om.size(dateIndex)
+        sortedkeys=controller.quicksort(keys, datecmp)
+        maintable=PrettyTable()
+        maintable.field_names = ['datetime','city','state','country','shape', 'duration (seconds)']
+        maintable.align='l'
+        maintable._max_width= {'datetime': 20,'city':20,'state':20,'country':20,'shape':20, 'duration (seconds)':20}
+        for item in lt.iterator(sortedkeys):
+            entry = om.get(dateIndex, item)
+            sightning = me.getValue(entry)
+            for element in lt.iterator(sightning):
+                shape = element['shape']
+                if shape == '':
+                    shape = 'Unknown'
+                maintable.add_row([str(element['datetime']), str(element['city']), str(element['state']), str(element['country']), shape ,str(element['duration (seconds)'])])
+        print('There are',size,'different cities with UFO sightnings')
+        print('the first and last 3 UFO sightnings in the city are:')
+        print(maintable.get_string(start=0, end=3))
+        print(maintable.get_string(start=(numberofsightnings)-3, end=numberofsightnings))
     elif int(inputs[0]) == 3:
-        pass
+        print('Altura del arbol de ciudades',om.height(catalog['cityIndex']))
+        print('Numero de elementos (ciudades)',om.size(catalog['cityIndex']))
     elif int(inputs[0]) == 4:
         pass
     elif int(inputs[0]) == 5:

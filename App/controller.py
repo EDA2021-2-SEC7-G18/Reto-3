@@ -23,18 +23,36 @@
 import config as cf
 import model
 import csv
-
-
+from datetime import datetime
+from DISClib.Algorithms.Sorting import quicksort as qck
+from DISClib.ADT import list as lt
 """
 El controlador se encarga de mediar entre la vista y el modelo.
 """
-
 # Inicialización del Catálogo de libros
-
+def init():
+    catalog = model.newCatalog()
+    return catalog
 # Funciones para la carga de datos
-
+def loadSightnings(catalog):
+    UFOSfile = cf.data_dir + 'UFOS-utf8-small.csv'
+    input_file = csv.DictReader(open(UFOSfile, encoding="utf-8"),
+                                delimiter=",")
+    for sightning in input_file:
+        model.addSightning(catalog, sightning)
+def loadCityIndex(catalog):
+    for sightning in lt.iterator(catalog['sightnings']):
+        model.updateCityIndex(catalog,sightning)
+def loadAll(catalog):
+    loadSightnings(catalog)
+    loadCityIndex(catalog)
 #Req 1
-
+def calldatecmp(date1,date2):
+    if date1 != '' and date2 != '':
+        condition = model.datecmp(date1,date2)
+    else:
+        condition = False
+    return condition
 #Req 2
 
 #Req 3
@@ -44,5 +62,6 @@ El controlador se encarga de mediar entre la vista y el modelo.
 #Req 5
 
 # Funciones de ordenamiento
-
+def quicksort(catalog,cmpfunction):
+    return qck.sort(catalog,cmpfunction)
 # Funciones de consulta sobre el catálogo
