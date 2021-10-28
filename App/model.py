@@ -41,9 +41,10 @@ los mismos.
 
 # Construccion de modelos
 def newCatalog():
-    catalog = {'cityIndex': None, 'sightnings':None}
-    catalog['cityIndex'] = om.newMap(omaptype='RBT', comparefunction=None)
+    catalog = {'cityIndex': None, 'sightnings':None, 'dateIndex':None}
+    catalog['cityIndex'] = om.newMap(omaptype='RBT', comparefunction=compareCities)
     catalog['sightnings'] = lt.newList('ARRAY_LIST',cmpfunction=None)
+    catalog['dateIndex']= om.newMap(omaptype='RBT', comparefunction=compareDates)
     return catalog
 
 # Funciones para agregar informacion al catalogo
@@ -59,11 +60,22 @@ def addDate(dateIndex, sightning):
         Data = me.getValue(entry)
     lt.addLast(Data, sightning)
 
+def updateDateIndex(catalog, sightning):
+    date=datetime.strptime(sightning['datetime'], '%Y-%m-%d %H:%M:%S')
+    reconstructdate = str(date.year) + '-' + str(date.month) + '-' + str(date.day)
+    entry = om.get(catalog['dateIndex'], reconstructdate)
+    if entry is None:
+        datelist = lt.newList('ARRAY_LIST', cmpfunction=None)
+        om.put(catalog['dateIndex'], reconstructdate , datelist)
+    else:
+        datelist = me.getValue(entry)
+    lt.addLast(datelist, sightning)
+
 def updateCityIndex(catalog, sightning):
     city=sightning['city']
     entry = om.get(catalog['cityIndex'], city)
     if entry is None:
-        dateIndex = om.newMap(omaptype='BST', comparefunction=compareDates)
+        dateIndex = om.newMap(omaptype='BST', comparefunction=comparefullDates)
         om.put(catalog['cityIndex'], city, dateIndex)
     else:
         dateIndex = me.getValue(entry)
@@ -79,22 +91,45 @@ def datecmp(date1, date2):
 #Req 3
 
 #Req 4
+def simpledatecmp(date1, date2):
+    return datetime.strptime(date1, '%Y-%m-%d') < datetime.strptime(date2,'%Y-%m-%d')
+def rangecmp(date, start, end):
+    return (datetime.strptime(date,'%Y-%m-%d') > start) and (datetime.strptime(date,'%Y-%m-%d') < end)
+def rangekeys(keys,catalog,start, end, cmp):
+    numerosightnings = 0
+    lst = lt.newList('ARRAY_LIST')
+    for item in lt.iterator(keys):
+        if cmp(item, start,end):
+            entry = om.get(catalog['dateIndex'], item)
+            sightning = me.getValue(entry)
+            numerosightnings += lt.size(sightning)
+            lt.addLast(lst, item)
+    return lst, numerosightnings
 
 #Req 5
 
 # Funciones de consulta
 
 # Funciones utilizadas para comparar elementos dentro de una lista
-def compareIds(id1, id2):
+def compareCities(id1, id2):
     if (id1 == id2):
         return 0
     elif id1 > id2:
         return 1
     else:
         return -1
-def compareDates(date1,date2):
+def comparefullDates(date1,date2):
     date11=datetime.strptime(date1, '%Y-%m-%d %H:%M:%S')
     date22=datetime.strptime(date2, '%Y-%m-%d %H:%M:%S')
+    if (date11 == date22):
+        return 0
+    elif (date11 > date22):
+        return 1
+    else:
+        return-1
+def compareDates(date1,date2):
+    date11=datetime.strptime(date1, '%Y-%m-%d')
+    date22=datetime.strptime(date2, '%Y-%m-%d')
     if (date11 == date22):
         return 0
     elif (date11 > date22):

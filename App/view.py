@@ -28,6 +28,7 @@ from DISClib.ADT import map as mp
 from DISClib.DataStructures import mapentry as me
 from DISClib.ADT import orderedmap as om
 from prettytable import PrettyTable
+from datetime import datetime
 assert cf
 
 
@@ -94,7 +95,37 @@ while True:
     elif int(inputs[0]) == 4:
         pass
     elif int(inputs[0]) == 5:
-        pass
+        startdate=str(input('Ingrese la fecha inicial '))
+        startdate=datetime.strptime(startdate,'%Y-%m-%d')
+        enddate=str(input('Ingrese la fecha final '))
+        enddate=datetime.strptime(enddate,'%Y-%m-%d')
+        keys = om.keySet(catalog['dateIndex'])
+        cmp = controller.callrangecmp
+        rangekeys,numberofsightnings = controller.callrangekeys(keys,catalog,startdate,enddate,cmp)
+        sortcmp = controller.callsimpledatecmp
+        sortedkeys = controller.shellsort(rangekeys, sortcmp)
+        maintable=PrettyTable()
+        maintable.field_names = ['datetime','city','state','country','shape', 'duration (seconds)']
+        maintable.align='l'
+        maintable._max_width= {'datetime': 20,'city':20,'state':20,'country':20,'shape':20, 'duration (seconds)':20}
+        oldestdate = lt.firstElement(sortedkeys)
+        entry = om.get(catalog['dateIndex'], oldestdate)
+        oldest = me.getValue(entry)
+        oldestsize= lt.size(oldest)
+        for item in lt.iterator(sortedkeys):
+            entry = om.get(catalog['dateIndex'], item)
+            sightning = me.getValue(entry)
+            for element in lt.iterator(sightning):
+                shape = element['shape']
+                if shape == '':
+                    shape = 'Unknown'
+                maintable.add_row([str(element['datetime']), str(element['city']), str(element['state']), str(element['country']), shape ,str(element['duration (seconds)'])])
+        print('The number of sightnings with the oldest date is ' , oldestsize)
+        print('There are',numberofsightnings,' sightnings between', startdate, 'and', enddate, '\n')
+        print('the first and last 3 UFO sightnings in this time are:')
+        print(maintable.get_string(start=0, end=3))
+        print(maintable.get_string(start=(numberofsightnings)-3, end=numberofsightnings))
+        
     elif int(inputs[0]) == 6:
         pass
     else:
