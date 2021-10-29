@@ -127,7 +127,41 @@ while True:
         print(maintable.get_string(start=(numberofsightnings)-3, end=numberofsightnings))
         
     elif int(inputs[0]) == 6:
-        pass
+        minlong=float(input('Ingrese la longitud minima'))
+        minlong = round(minlong, 2)
+        maxlong = float(input('Ingrese la longitud maxima'))
+        maxlong = round(maxlong, 2)
+        minlat=float(input('Ingrese la latitud minima'))
+        minlat = round(minlat, 2)
+        maxlat=float(input('Ingrese la latitud maxima'))
+        maxlat = round(maxlat,2)
+        keys=om.keySet(catalog['longitudeIndex'])
+        longcmp=controller.callLongitudecmp
+        sortcmp=controller.callsortlongitude
+        pairs,numberofsightnings=controller.callrangelongitude(keys, catalog,minlong,maxlong, minlat,maxlat,longcmp)
+        sortedpairs=controller.quicksort(pairs,sortcmp)
+        maintable=PrettyTable()
+        maintable.field_names = ['datetime','city','state','country','shape', 'duration (seconds)', 'longitude', 'latitude']
+        maintable.align='l'
+        maintable._max_width= {'datetime': 20,'city':20,'state':20,'country':20,'shape':20, 'duration (seconds)':20,'longitude':20, 'latitude':20}
+        for item in lt.iterator(pairs):
+            entrylong = om.get(catalog['longitudeIndex'], item['longitude'])
+            latmap = me.getValue(entrylong)
+            entrylat = om.get(latmap, item['latitude'])
+            sightnings = me.getValue(entrylat)
+            for avistamiento in lt.iterator(sightnings):
+                shape = avistamiento['shape']
+                if shape == '':
+                    shape = 'Unknown'
+                maintable.add_row([str(avistamiento['datetime']), str(avistamiento['city']), str(avistamiento['state']), str(avistamiento['country']), shape ,str(avistamiento['duration (seconds)']), round(float(avistamiento['longitude']),2), round(float(avistamiento['latitude']),2)])
+        print('There are',numberofsightnings,' sightnings between longitude: ', minlong, 'and', maxlong, ' and latitude: ', minlat, 'and', maxlat, '\n')
+        print('the first and last 5 UFO sightnings in this area are:')
+        print(maintable.get_string(start=0, end=5))
+        if numberofsightnings>5:
+            if numberofsightnings<10:
+                print(maintable.get_string(start=(numberofsightnings)-(numberofsightnings%5), end=numberofsightnings))
+            else:
+                print(maintable.get_string(start=(numberofsightnings)-5, end=numberofsightnings))
     else:
         sys.exit(0)
 sys.exit(0)

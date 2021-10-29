@@ -25,6 +25,7 @@
  """
 
 
+from typing import OrderedDict
 import config as cf
 from DISClib.ADT import list as lt
 from DISClib.ADT import map as mp
@@ -41,10 +42,11 @@ los mismos.
 
 # Construccion de modelos
 def newCatalog():
-    catalog = {'cityIndex': None, 'sightnings':None, 'dateIndex':None}
+    catalog = {'cityIndex': None, 'sightnings':None, 'dateIndex':None, 'longitudeIndex':None}
     catalog['cityIndex'] = om.newMap(omaptype='RBT', comparefunction=compareCities)
     catalog['sightnings'] = lt.newList('ARRAY_LIST',cmpfunction=None)
     catalog['dateIndex']= om.newMap(omaptype='RBT', comparefunction=compareDates)
+    catalog['longitudeIndex'] = om.newMap(omaptype='RBT', comparefunction=compareLongitude)
     return catalog
 
 # Funciones para agregar informacion al catalogo
@@ -75,12 +77,31 @@ def updateCityIndex(catalog, sightning):
     city=sightning['city']
     entry = om.get(catalog['cityIndex'], city)
     if entry is None:
-        dateIndex = om.newMap(omaptype='BST', comparefunction=comparefullDates)
+        dateIndex = om.newMap(omaptype='RBT', comparefunction=comparefullDates)
         om.put(catalog['cityIndex'], city, dateIndex)
     else:
         dateIndex = me.getValue(entry)
     addDate(dateIndex, sightning)
 
+def addLatitude(latitudeIndex, sightning):
+    latitude=sightning['latitude']
+    entry = om.get(latitudeIndex, latitude)
+    if entry is None:
+        Data= lt.newList('ARRAY_LIST', cmpfunction=None)
+        om.put(latitudeIndex, latitude, Data)
+    else:
+        Data = me.getValue(entry)
+    lt.addLast(Data, sightning)
+
+def updateLongitude(catalog, sightning):
+    longitude= sightning['longitude']
+    entry = om.get(catalog['longitudeIndex'], longitude)
+    if entry is None:
+        latitudeIndex = om.newMap(omaptype='RBT', comparefunction=compareLongitude)
+        om.put(catalog['longitudeIndex'], longitude, latitudeIndex)
+    else:
+        latitudeIndex = me.getValue(entry)
+    addLatitude(latitudeIndex, sightning)
 # Funciones para creacion de datos
 
 #Req 1
@@ -107,6 +128,33 @@ def rangekeys(keys,catalog,start, end, cmp):
     return lst, numerosightnings
 
 #Req 5
+def sortlongitude(long1,long2):
+    lat1=long1['latitude']
+    lat2=long2['latitude']
+    modlongitude1 = round(float(lat1), 2)
+    modlongitude2 = round(float(lat2), 2)
+    return abs(modlongitude1) < abs(modlongitude2)
+def longitudecmp(longitude, minimum, maximum):
+    modlongitude = round(float(longitude), 2)
+    return (abs(modlongitude)>abs(minimum)) and (abs(modlongitude)<abs(maximum))
+def rangelongitude(keys, catalog,minlong,maxlong,minlat,maxlat,cmp):
+    list=lt.newList('ARRAY_LIST', cmpfunction=None)
+    numbersightnings =0
+    for item in lt.iterator(keys):
+        dictionary = OrderedDict()
+        if item != '':
+            if cmp(float(item), minlong,maxlong,):
+                entry = om.get(catalog['longitudeIndex'], item)
+                sightning = me.getValue(entry)
+                latkeys= om.keySet(sightning)
+                dictionary['longitude']=item
+                for latitude in lt.iterator(latkeys):
+                    if latitude != '':
+                        if cmp(float(latitude), minlat,maxlat):
+                            dictionary['latitude']=latitude
+                            lt.addLast(list, dictionary)
+                            numbersightnings += 1
+    return list, numbersightnings
 
 # Funciones de consulta
 
@@ -115,6 +163,13 @@ def compareCities(id1, id2):
     if (id1 == id2):
         return 0
     elif id1 > id2:
+        return 1
+    else:
+        return -1
+def compareLongitude(long1,long2):
+    if (long1 == long2):
+        return 0
+    elif long1 > long2:
         return 1
     else:
         return -1

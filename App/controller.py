@@ -47,10 +47,14 @@ def loadCityIndex(catalog):
 def loadDateIndex(catalog):
     for sightning in lt.iterator(catalog['sightnings']):
         model.updateDateIndex(catalog, sightning)
+def loadLongitudeIndex(catalog):
+    for sightning in lt.iterator(catalog['sightnings']):
+        model.updateLongitude(catalog, sightning)
 def loadAll(catalog):
     loadSightnings(catalog)
     loadCityIndex(catalog)
     loadDateIndex(catalog)
+    loadLongitudeIndex(catalog)
 #Req 1
 def calldatecmp(date1,date2):
     if date1 != '' and date2 != '':
@@ -82,7 +86,24 @@ def callrangekeys(keys,catalog,start,end, cmp):
         condition = 'No sightnings found in range'
     return condition
 #Req 5
-
+def callsortlongitude(long1,long2):
+    if long1 != '' and long2 != '':
+        condition=model.sortlongitude
+    else:
+        condition=False
+    return condition
+def callLongitudecmp(longitude, minimum, maximum):
+    if type(longitude) != str:
+        condition = model.longitudecmp(longitude, minimum, maximum)
+    else:
+        condition=False
+    return condition
+def callrangelongitude(keys, catalog,minlong,maxlong,minlat,maxlat, cmp):
+    if keys != None:
+        condition = model.rangelongitude(keys,catalog,minlong,maxlong,minlat,maxlat,cmp)
+    else:
+        condition = 'No sightnings found in range'
+    return condition
 # Funciones de ordenamiento
 def quicksort(catalog,cmpfunction):
     return qck.sort(catalog,cmpfunction)
