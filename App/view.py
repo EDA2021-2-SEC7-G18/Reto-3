@@ -28,7 +28,7 @@ from DISClib.ADT import map as mp
 from DISClib.DataStructures import mapentry as me
 from DISClib.ADT import orderedmap as om
 from prettytable import PrettyTable
-from datetime import datetime
+from datetime import datetime, time
 assert cf
 
 
@@ -93,7 +93,51 @@ while True:
         print('Altura del arbol de ciudades',om.height(catalog['cityIndex']))
         print('Numero de elementos (ciudades)',om.size(catalog['cityIndex']))
     elif int(inputs[0]) == 4:
-        pass
+        starttime= str(input('Ingrese la hora inicial '))
+        starttime=datetime.strptime(starttime, '%H:%M')
+        starttime=str(starttime.hour)+':'+str(starttime.minute)
+        endtime= str(input('Ingrese la hora final '))
+        endtime=datetime.strptime(endtime, '%H:%M')
+        endtime=str(endtime.hour)+':'+str(endtime.minute)
+        keys=om.keySet(catalog['fulldateIndex'])
+        cmp=controller.callrangetimecmp
+        rangekeys,numberofsightnings=controller.callrangetime(keys,catalog,starttime,endtime, cmp)
+        sortcmp=controller.callsorttimecmp
+        sortedkeys=controller.quicksort(rangekeys, sortcmp)
+        print(sortedkeys)
+        oldestdate = om.maxKey(catalog['timeIndex'])
+        entry = om.get(catalog['timeIndex'], oldestdate)
+        oldest = me.getValue(entry)
+        oldestsize= lt.size(oldest)
+        totalsize=om.size(catalog['timeIndex'])
+        oldtable=PrettyTable()
+        oldtable.field_names = ['date', 'count']
+        oldtable.align='l'
+        oldtable._max_width= {'date': 15,'count':15}
+        oldtable.add_row([str(oldestdate),str(oldestsize)])
+        maintable=PrettyTable()
+        maintable.field_names = ['datetime','time','city','state','country','shape', 'duration (seconds)']
+        maintable.align='l'
+        maintable._max_width= {'datetime': 20,'time':20,'city':20,'state':20,'country':20,'shape':20, 'duration (seconds)':20}
+        for item in lt.iterator(sortedkeys):
+            entry = om.get(catalog['fulldateIndex'], item)
+            sightning = me.getValue(entry)
+            for element in lt.iterator(sightning):
+                date=datetime.strptime(element['datetime'], '%Y-%m-%d %H:%M:%S')
+                fecha=str(date.year)+'-'+str(date.month)+'-'+str(date.day)
+                hora=str(date.hour)+':'+str(date.minute)
+                shape = element['shape']
+                if shape == '':
+                    shape = 'Unknown'
+                maintable.add_row([str(fecha), str(hora),str(element['city']), str(element['state']), str(element['country']), shape ,str(element['duration (seconds)'])])
+        print('There are ', totalsize, ' sightnings between:', starttime,'and',endtime)
+        print('The latest UFO sightning time is: ')
+        print(oldtable)
+        print('\nThere are',numberofsightnings,' sightnings between', starttime, 'and', endtime, '\n')
+        print('the first and last 3 UFO sightnings in this time are:')
+        print(maintable.get_string(start=0, end=3))
+        print(maintable.get_string(start=(numberofsightnings)-3, end=numberofsightnings))
+
     elif int(inputs[0]) == 5:
         startdate=str(input('Ingrese la fecha inicial '))
         startdate=datetime.strptime(startdate,'%Y-%m-%d')
@@ -104,14 +148,19 @@ while True:
         rangekeys,numberofsightnings = controller.callrangekeys(keys,catalog,startdate,enddate,cmp)
         sortcmp = controller.callsimpledatecmp
         sortedkeys = controller.shellsort(rangekeys, sortcmp)
+        oldestdate = om.minKey(catalog['dateIndex'])
+        entry = om.get(catalog['dateIndex'], oldestdate)
+        oldest = me.getValue(entry)
+        oldestsize= lt.size(oldest)
+        oldtable=PrettyTable()
+        oldtable.field_names = ['date', 'count']
+        oldtable.align='l'
+        oldtable._max_width= {'date': 15,'count':15}
+        oldtable.add_row([str(oldestdate),oldestsize])
         maintable=PrettyTable()
         maintable.field_names = ['datetime','city','state','country','shape', 'duration (seconds)']
         maintable.align='l'
         maintable._max_width= {'datetime': 20,'city':20,'state':20,'country':20,'shape':20, 'duration (seconds)':20}
-        oldestdate = lt.firstElement(sortedkeys)
-        entry = om.get(catalog['dateIndex'], oldestdate)
-        oldest = me.getValue(entry)
-        oldestsize= lt.size(oldest)
         for item in lt.iterator(sortedkeys):
             entry = om.get(catalog['dateIndex'], item)
             sightning = me.getValue(entry)
@@ -120,8 +169,11 @@ while True:
                 if shape == '':
                     shape = 'Unknown'
                 maintable.add_row([str(element['datetime']), str(element['city']), str(element['state']), str(element['country']), shape ,str(element['duration (seconds)'])])
-        print('The number of sightnings with the oldest date is ' , oldestsize)
-        print('There are',numberofsightnings,' sightnings between', startdate, 'and', enddate, '\n')
+        difsight=om.size(catalog['dateIndex'])
+        print('\nThere are',difsight,'UFO sightnings with different dates [YYYY-MM-DD]..')
+        print('The oldest UFO sightnings date is:')
+        print(oldtable)
+        print('\nThere are',numberofsightnings,' sightnings between', startdate, 'and', enddate, '\n')
         print('the first and last 3 UFO sightnings in this time are:')
         print(maintable.get_string(start=0, end=3))
         print(maintable.get_string(start=(numberofsightnings)-3, end=numberofsightnings))

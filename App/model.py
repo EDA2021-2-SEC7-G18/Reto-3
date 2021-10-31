@@ -42,11 +42,13 @@ los mismos.
 
 # Construccion de modelos
 def newCatalog():
-    catalog = {'cityIndex': None, 'sightnings':None, 'dateIndex':None, 'longitudeIndex':None}
+    catalog = {'cityIndex': None, 'sightnings':None, 'dateIndex':None, 'longitudeIndex':None, 'fulldateIndex':None, 'timeIndex':None}
     catalog['cityIndex'] = om.newMap(omaptype='RBT', comparefunction=compareCities)
     catalog['sightnings'] = lt.newList('ARRAY_LIST',cmpfunction=None)
     catalog['dateIndex']= om.newMap(omaptype='RBT', comparefunction=compareDates)
     catalog['longitudeIndex'] = om.newMap(omaptype='RBT', comparefunction=compareLongitude)
+    catalog['fulldateIndex']=om.newMap(omaptype='RBT', comparefunction=comparefullDates)
+    catalog['timeIndex']=om.newMap(omaptype='RBT', comparefunction=comparetime)
     return catalog
 
 # Funciones para agregar informacion al catalogo
@@ -61,6 +63,16 @@ def addDate(dateIndex, sightning):
     else:
         Data = me.getValue(entry)
     lt.addLast(Data, sightning)
+
+def updateFullDateIndex(catalog, sightning):
+    date=sightning['datetime']
+    entry = om.get(catalog['fulldateIndex'], date)
+    if entry is None:
+        datelist = lt.newList('ARRAY_LIST', cmpfunction=None)
+        om.put(catalog['fulldateIndex'], date , datelist)
+    else:
+        datelist = me.getValue(entry)
+    lt.addLast(datelist, sightning)
 
 def updateDateIndex(catalog, sightning):
     date=datetime.strptime(sightning['datetime'], '%Y-%m-%d %H:%M:%S')
@@ -92,7 +104,16 @@ def addLatitude(latitudeIndex, sightning):
     else:
         Data = me.getValue(entry)
     lt.addLast(Data, sightning)
-
+def addtime(catalog, sightning):
+    tiempo=datetime.strptime(sightning['datetime'],'%Y-%m-%d %H:%M:%S')
+    modtiempo=str(tiempo.hour)+':'+str(tiempo.minute)
+    entry = om.get(catalog['timeIndex'], modtiempo)
+    if entry is None:
+        timelist = lt.newList('ARRAY_LIST', cmpfunction=None)
+        om.put(catalog['timeIndex'], modtiempo, timelist)
+    else:
+        timelist = me.getValue(entry)
+    lt.addLast(timelist, sightning)
 def updateLongitude(catalog, sightning):
     longitude= sightning['longitude']
     entry = om.get(catalog['longitudeIndex'], longitude)
@@ -110,7 +131,28 @@ def datecmp(date1, date2):
 #Req 2
 
 #Req 3
-
+def sorttimecmp(date1,date2):
+    fulldate1 = datetime.strptime(date1, '%H:%M')
+    fulldate2 = datetime.strptime(date2, '%H:%M')
+    hora1= str(fulldate1.hour)+':'+str(fulldate1.minute)
+    hora2= str(fulldate2.hour)+':'+str(fulldate2.minute)
+    print('wow')
+    return None
+def rangetimecmp(time, start,end):
+    hora=datetime.strptime(time,'%Y-%m-%d %H:%M:%S').hour
+    minutos = datetime.strptime(time,'%Y-%m-%d %H:%M:%S').minute
+    modtime= str(hora)+':'+str(minutos)
+    return (modtime>=start) and (modtime<=end)
+def rangetime(keys,catalog,start, end, cmp):
+    numerosightnings = 0
+    lst = lt.newList('ARRAY_LIST')
+    for item in lt.iterator(keys):
+        if cmp(item, start,end):
+            entry = om.get(catalog['fulldateIndex'], item)
+            sightning = me.getValue(entry)
+            numerosightnings += lt.size(sightning)
+            lt.addLast(lst, item)
+    return lst, numerosightnings   
 #Req 4
 def simpledatecmp(date1, date2):
     return datetime.strptime(date1, '%Y-%m-%d') < datetime.strptime(date2,'%Y-%m-%d')
@@ -176,6 +218,15 @@ def compareLongitude(long1,long2):
 def comparefullDates(date1,date2):
     date11=datetime.strptime(date1, '%Y-%m-%d %H:%M:%S')
     date22=datetime.strptime(date2, '%Y-%m-%d %H:%M:%S')
+    if (date11 == date22):
+        return 0
+    elif (date11 > date22):
+        return 1
+    else:
+        return-1
+def comparetime(date1,date2):
+    date11=datetime.strptime(date1, '%H:%M')
+    date22=datetime.strptime(date2, '%H:%M')
     if (date11 == date22):
         return 0
     elif (date11 > date22):

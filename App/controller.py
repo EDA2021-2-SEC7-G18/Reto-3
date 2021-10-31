@@ -36,7 +36,7 @@ def init():
     return catalog
 # Funciones para la carga de datos
 def loadSightnings(catalog):
-    UFOSfile = cf.data_dir + 'UFOS-utf8-large.csv'
+    UFOSfile = cf.data_dir + 'UFOS-utf8-small.csv'
     input_file = csv.DictReader(open(UFOSfile, encoding="utf-8"),
                                 delimiter=",")
     for sightning in input_file:
@@ -47,14 +47,22 @@ def loadCityIndex(catalog):
 def loadDateIndex(catalog):
     for sightning in lt.iterator(catalog['sightnings']):
         model.updateDateIndex(catalog, sightning)
+def loadFullDateIndex(catalog,):
+    for sightning in lt.iterator(catalog['sightnings']):
+        model.updateFullDateIndex(catalog, sightning)
 def loadLongitudeIndex(catalog):
     for sightning in lt.iterator(catalog['sightnings']):
         model.updateLongitude(catalog, sightning)
+def loadtimeIndex(catalog):
+    for sightning in lt.iterator(catalog['sightnings']):
+        model.addtime(catalog, sightning)
 def loadAll(catalog):
     loadSightnings(catalog)
     loadCityIndex(catalog)
     loadDateIndex(catalog)
     loadLongitudeIndex(catalog)
+    loadFullDateIndex(catalog)
+    loadtimeIndex(catalog)
 #Req 1
 def calldatecmp(date1,date2):
     if date1 != '' and date2 != '':
@@ -65,7 +73,25 @@ def calldatecmp(date1,date2):
 #Req 2
 
 #Req 3
+def callsorttimecmp(date1,date2):
+    if date1 != '' and date2 !='':
+        condition=model.sorttimecmp
+    else:
+        condition =False
+    return condition
+def callrangetime(keys,catalog,start,end, cmp):
+    if keys != None:
+        condition = model.rangetime(keys,catalog,start,end,cmp)
+    else:
+        condition = 'No sightnings found in range'
+    return condition
 
+def callrangetimecmp(time, start,end):
+    if time!='':
+        condition=model.rangetimecmp(time,start,end)
+    else:
+        condition=False
+    return condition
 #Req 4
 def callsimpledatecmp(date1,date2):
     if date1 != '' and date2 != '':
