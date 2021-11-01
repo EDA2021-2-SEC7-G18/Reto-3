@@ -104,16 +104,27 @@ def addLatitude(latitudeIndex, sightning):
     else:
         Data = me.getValue(entry)
     lt.addLast(Data, sightning)
+def addsubDate(timeIndex, sightning):
+    date=sightning['datetime']
+    entry = om.get(timeIndex, date)
+    if entry is None:
+        datelist = lt.newList('ARRAY_LIST', cmpfunction=None)
+        om.put(timeIndex, date , datelist)
+    else:
+        datelist = me.getValue(entry)
+    lt.addLast(datelist, sightning)
+
 def addtime(catalog, sightning):
     tiempo=datetime.strptime(sightning['datetime'],'%Y-%m-%d %H:%M:%S')
     modtiempo=str(tiempo.hour)+':'+str(tiempo.minute)
     entry = om.get(catalog['timeIndex'], modtiempo)
     if entry is None:
-        timelist = lt.newList('ARRAY_LIST', cmpfunction=None)
-        om.put(catalog['timeIndex'], modtiempo, timelist)
+        dateIndex = om.newMap(omaptype='RBT', comparefunction=comparefullDates)
+        om.put(catalog['timeIndex'], modtiempo, dateIndex)
     else:
-        timelist = me.getValue(entry)
-    lt.addLast(timelist, sightning)
+        dateIndex = me.getValue(entry)
+    addDate(dateIndex, sightning)
+
 def updateLongitude(catalog, sightning):
     longitude= sightning['longitude']
     entry = om.get(catalog['longitudeIndex'], longitude)
@@ -128,34 +139,38 @@ def updateLongitude(catalog, sightning):
 #Req 1
 def datecmp(date1, date2):
     return datetime.strptime(date1, '%Y-%m-%d %H:%M:%S') < datetime.strptime(date2,'%Y-%m-%d %H:%M:%S')
+def mostsight(catalog,keys):
+    max=0
+    maxcity=''
+    for i in lt.iterator(keys):
+        entry=om.get(catalog['cityIndex'], i)
+        value=me.getValue(entry)
+        newkeys=om.keySet(value)
+        counter=0
+        for h in lt.iterator(newkeys):
+            entry=om.get(value,h)
+            newvalue=me.getValue(entry)
+            size=lt.size(newvalue)
+            counter+=size
+            if counter > max:
+                max=counter
+                maxcity= i
+    return max, maxcity
+
 #Req 2
 
 #Req 3
-def sorttimecmp(date1,date2):
-    fulldate1 = datetime.strptime(date1, '%H:%M')
-    fulldate2 = datetime.strptime(date2, '%H:%M')
-    hora1= str(fulldate1.hour)+':'+str(fulldate1.minute)
-    hora2= str(fulldate2.hour)+':'+str(fulldate2.minute)
-    print('wow')
-    return None
 def rangetimecmp(time, start,end):
-    hora=datetime.strptime(time,'%Y-%m-%d %H:%M:%S').hour
-    minutos = datetime.strptime(time,'%Y-%m-%d %H:%M:%S').minute
-    modtime= str(hora)+':'+str(minutos)
+    modtime=datetime.strptime(time,'%H:%M')
     return (modtime>=start) and (modtime<=end)
-def rangetime(keys,catalog,start, end, cmp):
-    numerosightnings = 0
-    lst = lt.newList('ARRAY_LIST')
+def rangetime(keys,start, end, cmp):
+    lst = lt.newList('ARRAY_LIST', cmpfunction=None)
     for item in lt.iterator(keys):
         if cmp(item, start,end):
-            entry = om.get(catalog['fulldateIndex'], item)
-            sightning = me.getValue(entry)
-            numerosightnings += lt.size(sightning)
             lt.addLast(lst, item)
-    return lst, numerosightnings   
+    return lst   
+
 #Req 4
-def simpledatecmp(date1, date2):
-    return datetime.strptime(date1, '%Y-%m-%d') < datetime.strptime(date2,'%Y-%m-%d')
 def rangecmp(date, start, end):
     return (datetime.strptime(date,'%Y-%m-%d') > start) and (datetime.strptime(date,'%Y-%m-%d') < end)
 def rangekeys(keys,catalog,start, end, cmp):
@@ -167,15 +182,10 @@ def rangekeys(keys,catalog,start, end, cmp):
             sightning = me.getValue(entry)
             numerosightnings += lt.size(sightning)
             lt.addLast(lst, item)
-    return lst, numerosightnings
+    return lst
 
 #Req 5
-def sortlongitude(long1,long2):
-    lat1=long1['latitude']
-    lat2=long2['latitude']
-    modlongitude1 = round(float(lat1), 2)
-    modlongitude2 = round(float(lat2), 2)
-    return abs(modlongitude1) < abs(modlongitude2)
+
 def longitudecmp(longitude, minimum, maximum):
     modlongitude = round(float(longitude), 2)
     return (abs(modlongitude)>abs(minimum)) and (abs(modlongitude)<abs(maximum))
@@ -196,7 +206,7 @@ def rangelongitude(keys, catalog,minlong,maxlong,minlat,maxlat,cmp):
                             dictionary['latitude']=latitude
                             lt.addLast(list, dictionary)
                             numbersightnings += 1
-    return list, numbersightnings
+    return list
 
 # Funciones de consulta
 
@@ -209,9 +219,11 @@ def compareCities(id1, id2):
     else:
         return -1
 def compareLongitude(long1,long2):
-    if (long1 == long2):
+    long11=float(long1)
+    long22=float(long2)
+    if (long11 == long22):
         return 0
-    elif long1 > long2:
+    elif long11 > long22:
         return 1
     else:
         return -1
@@ -234,8 +246,9 @@ def comparetime(date1,date2):
     else:
         return-1
 def compareDates(date1,date2):
-    date11=datetime.strptime(date1, '%Y-%m-%d')
-    date22=datetime.strptime(date2, '%Y-%m-%d')
+
+    date11=datetime.strptime(str(date1), '%Y-%m-%d')
+    date22=datetime.strptime(str(date2), '%Y-%m-%d')
     if (date11 == date22):
         return 0
     elif (date11 > date22):

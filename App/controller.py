@@ -36,7 +36,7 @@ def init():
     return catalog
 # Funciones para la carga de datos
 def loadSightnings(catalog):
-    UFOSfile = cf.data_dir + 'UFOS-utf8-small.csv'
+    UFOSfile = cf.data_dir + 'UFOS-utf8-large.csv'
     input_file = csv.DictReader(open(UFOSfile, encoding="utf-8"),
                                 delimiter=",")
     for sightning in input_file:
@@ -70,6 +70,8 @@ def calldatecmp(date1,date2):
     else:
         condition = False
     return condition
+def mostsight(catalog,keys):
+    return model.mostsight(catalog,keys)
 #Req 2
 
 #Req 3
@@ -79,9 +81,9 @@ def callsorttimecmp(date1,date2):
     else:
         condition =False
     return condition
-def callrangetime(keys,catalog,start,end, cmp):
+def callrangetime(keys,start,end, cmp):
     if keys != None:
-        condition = model.rangetime(keys,catalog,start,end,cmp)
+        condition = model.rangetime(keys,start,end,cmp)
     else:
         condition = 'No sightnings found in range'
     return condition
