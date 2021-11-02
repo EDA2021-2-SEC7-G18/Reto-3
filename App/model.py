@@ -49,6 +49,8 @@ def newCatalog():
     catalog['longitudeIndex'] = om.newMap(omaptype='RBT', comparefunction=compareLongitude)
     catalog['fulldateIndex']=om.newMap(omaptype='RBT', comparefunction=comparefullDates)
     catalog['timeIndex']=om.newMap(omaptype='RBT', comparefunction=comparetime)
+    catalog['DurationIndex']=om.newMap(omaptype='RBT')#, comparefunction = compareDurations)
+    catalog['Dtimes'] = om.newMap(omaptype ='RBT')
     return catalog
 
 # Funciones para agregar informacion al catalogo
@@ -134,6 +136,28 @@ def updateLongitude(catalog, sightning):
     else:
         latitudeIndex = me.getValue(entry)
     addLatitude(latitudeIndex, sightning)
+
+def loadDurationIndex(catalog, sightning):
+    duration= float(sightning['duration (seconds)'])
+    entry = om.get(catalog['DurationIndex'], duration)
+    #key = sightning['country']
+    if entry is None:
+        DurationIndex = lt.newList('SINGLE_LINKED', cmpfunction= comparestrings)
+        om.put(catalog['DurationIndex'], duration, DurationIndex)
+    else:
+        DurationIndex = me.getValue(entry)
+        lt.addLast(DurationIndex, sightning)
+    loadDtimes(catalog, duration)
+
+def loadDtimes(catalog,duration):
+    val = 1
+    conditional = lt.isPresent(om.keySet(catalog['Dtimes']), duration)
+    if conditional == 0:
+        om.put(catalog['Dtimes'], duration, val)
+    else:# conditional !=0:
+        entry = om.get(catalog['Dtimes'], float(duration))
+        val = me.getValue(entry) +1
+        om.put(catalog['Dtimes'], float(duration), conditional)
 # Funciones para creacion de datos
 
 #Req 1
@@ -158,7 +182,12 @@ def mostsight(catalog,keys):
     return max, maxcity
 
 #Req 2
+def getmax(catalog):
+    entry =om.get(catalog['Dtimes'],om.maxKey(catalog['Dtimes']))
+    return me.getKey(entry),me.getValue(entry)
 
+def getinterval(catalog, low, high):
+    return om.values(catalog['DurationIndex'], low, high)
 #Req 3
 def rangetimecmp(time, start,end):
     modtime=datetime.strptime(time,'%H:%M')
@@ -211,6 +240,26 @@ def rangelongitude(keys, catalog,minlong,maxlong,minlat,maxlat,cmp):
 # Funciones de consulta
 
 # Funciones utilizadas para comparar elementos dentro de una lista
+def comparestrings(one, two):
+    if one['country']< two['country']:
+        return one
+    elif one['country']> two['country']:
+        return two
+    elif one['country'] ==two['country']:
+        if one['city']<two['city']:
+            return one
+        else:
+            return two
+def compareDurations(duration1, duration2):
+    duration2 = float(duration2)
+    duration1 = float(duration1)
+    if duration1 > duration2:
+        return 1
+    elif duration1 == duration2:
+        return 0
+    else:
+        return -1
+    
 def compareCities(id1, id2):
     if (id1 == id2):
         return 0
