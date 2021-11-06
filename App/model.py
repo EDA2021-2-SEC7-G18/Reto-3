@@ -31,8 +31,9 @@ from DISClib.ADT import list as lt
 from DISClib.ADT import map as mp
 from DISClib.ADT import orderedmap as om
 from DISClib.DataStructures import mapentry as me
-from DISClib.Algorithms.Sorting import shellsort as sa
+
 from datetime import datetime
+from prettytable import PrettyTable
 assert cf
 
 """
@@ -42,12 +43,11 @@ los mismos.
 
 # Construccion de modelos
 def newCatalog():
-    catalog = {'cityIndex': None, 'sightnings':None, 'dateIndex':None, 'longitudeIndex':None, 'fulldateIndex':None, 'timeIndex':None}
+    catalog = {'cityIndex': None, 'sightnings':None, 'dateIndex':None, 'latitudeIndex':None, 'timeIndex':None}
     catalog['cityIndex'] = om.newMap(omaptype='RBT', comparefunction=compareCities)
     catalog['sightnings'] = lt.newList('ARRAY_LIST',cmpfunction=None)
     catalog['dateIndex']= om.newMap(omaptype='RBT', comparefunction=compareDates)
-    catalog['longitudeIndex'] = om.newMap(omaptype='RBT', comparefunction=compareLongitude)
-    catalog['fulldateIndex']=om.newMap(omaptype='RBT', comparefunction=comparefullDates)
+    catalog['latitudeIndex'] = om.newMap(omaptype='RBT', comparefunction=compareLongitude)
     catalog['timeIndex']=om.newMap(omaptype='RBT', comparefunction=comparetime)
     catalog['DurationIndex']=om.newMap(omaptype='RBT')#, comparefunction = compareDurations)
     catalog['Dtimes'] = om.newMap(omaptype ='RBT')
@@ -65,16 +65,6 @@ def addDate(dateIndex, sightning):
     else:
         Data = me.getValue(entry)
     lt.addLast(Data, sightning)
-
-def updateFullDateIndex(catalog, sightning):
-    date=sightning['datetime']
-    entry = om.get(catalog['fulldateIndex'], date)
-    if entry is None:
-        datelist = lt.newList('ARRAY_LIST', cmpfunction=None)
-        om.put(catalog['fulldateIndex'], date , datelist)
-    else:
-        datelist = me.getValue(entry)
-    lt.addLast(datelist, sightning)
 
 def updateDateIndex(catalog, sightning):
     date=datetime.strptime(sightning['datetime'], '%Y-%m-%d %H:%M:%S')
@@ -97,12 +87,12 @@ def updateCityIndex(catalog, sightning):
         dateIndex = me.getValue(entry)
     addDate(dateIndex, sightning)
 
-def addLatitude(latitudeIndex, sightning):
-    latitude=sightning['latitude']
-    entry = om.get(latitudeIndex, latitude)
+def addLongitude(longitudeIndex, sightning):
+    longitude=sightning['longitude']
+    entry = om.get(longitudeIndex, longitude)
     if entry is None:
         Data= lt.newList('ARRAY_LIST', cmpfunction=None)
-        om.put(latitudeIndex, latitude, Data)
+        om.put(longitudeIndex, longitude, Data)
     else:
         Data = me.getValue(entry)
     lt.addLast(Data, sightning)
@@ -127,15 +117,15 @@ def addtime(catalog, sightning):
         dateIndex = me.getValue(entry)
     addDate(dateIndex, sightning)
 
-def updateLongitude(catalog, sightning):
-    longitude= sightning['longitude']
-    entry = om.get(catalog['longitudeIndex'], longitude)
+def updateLatitude(catalog, sightning):
+    latitude= sightning['latitude']
+    entry = om.get(catalog['latitudeIndex'], latitude)
     if entry is None:
-        latitudeIndex = om.newMap(omaptype='RBT', comparefunction=compareLongitude)
-        om.put(catalog['longitudeIndex'], longitude, latitudeIndex)
+        longitudeIndex = om.newMap(omaptype='RBT', comparefunction=compareLongitude)
+        om.put(catalog['latitudeIndex'], latitude, longitudeIndex)
     else:
-        latitudeIndex = me.getValue(entry)
-    addLatitude(latitudeIndex, sightning)
+        longitudeIndex = me.getValue(entry)
+    addLongitude(longitudeIndex, sightning)
 
 def loadDurationIndex(catalog, sightning):
     duration= float(sightning['duration (seconds)'])
@@ -161,26 +151,69 @@ def loadDtimes(catalog,duration):
 # Funciones para creacion de datos
 
 #Req 1
+def Return_Values_and_Keys(catalog, variable, conditional):
+    entry=om.get(catalog, variable)
+    value=me.getValue(entry)
+    newkeys=om.keySet(value)
+    if conditional:
+        result = value, newkeys
+    else:
+        result = newkeys
+    return result
+def Return_Size(catalog, variable):
+    entry=om.get(catalog, variable)
+    value=me.getValue(entry)
+    if type(value) == dict:
+        size = lt.size(value)
+    else: 
+        size = om.size(value)
+    return size
 def datecmp(date1, date2):
     return datetime.strptime(date1, '%Y-%m-%d %H:%M:%S') < datetime.strptime(date2,'%Y-%m-%d %H:%M:%S')
 def mostsight(catalog,keys):
     max=0
     maxcity=''
-    for i in lt.iterator(keys):
-        entry=om.get(catalog['cityIndex'], i)
-        value=me.getValue(entry)
-        newkeys=om.keySet(value)
+    for variable in lt.iterator(keys):
+        value, cities= Return_Values_and_Keys(catalog['cityIndex'], variable, True)
         counter=0
-        for h in lt.iterator(newkeys):
-            entry=om.get(value,h)
-            newvalue=me.getValue(entry)
-            size=lt.size(newvalue)
+        for city in lt.iterator(cities):
+            size= Return_Size(value, city)
             counter+=size
             if counter > max:
                 max=counter
-                maxcity= i
+                maxcity= variable
     return max, maxcity
+def KeysandSizes(catalog, city):
+    entry = om.get(catalog['cityIndex'], city)
+    dateIndex = me.getValue(entry)
+    size=om.size(dateIndex)
+    citykeys=om.keySet(catalog['cityIndex'])
+    totalsize=om.size(catalog['cityIndex'])
+    dateIndexkeys = om.keySet(dateIndex)
+    return size, citykeys, totalsize, dateIndex, dateIndexkeys
 
+def Construct_Cities_Tables(dateIndexkeys,dateIndex):
+    numberofsightnings=0
+    maintable=PrettyTable()
+    maintable.field_names = ['datetime','city','state','country','shape', 'duration (seconds)']
+    maintable.align='l'
+    maintable._max_width= {'datetime': 20,'city':20,'state':20,'country':20,'shape':20, 'duration (seconds)':20}
+    for item in lt.iterator(dateIndexkeys):
+        entry = om.get(dateIndex, item)
+        sightning = me.getValue(entry)
+        for element in lt.iterator(sightning):
+            numberofsightnings+=1
+            shape = element['shape']
+            if shape == '':
+                shape = 'Unknown'
+            maintable.add_row([str(element['datetime']), str(element['city']), str(element['state']), str(element['country']), shape ,str(element['duration (seconds)'])])
+    return maintable, numberofsightnings
+def Construct_Max_Table(max, maxcity):
+        newtable=PrettyTable()
+        newtable.field_names = ['city','sightings']
+        newtable.align='l'
+        newtable._max_width= {'city':20,'sightings':20}
+        newtable.add_row([str(maxcity), str(max)])
 #Req 2
 def getmax(catalog):
     entry =om.get(catalog['Dtimes'],om.maxKey(catalog['Dtimes']))
@@ -207,36 +240,76 @@ def rangekeys(keys,catalog,start, end, cmp):
     lst = lt.newList('ARRAY_LIST')
     for item in lt.iterator(keys):
         if cmp(item, start,end):
-            entry = om.get(catalog['dateIndex'], item)
-            sightning = me.getValue(entry)
-            numerosightnings += lt.size(sightning)
+            size = Return_Size(catalog['dateIndex'], item)
+            numerosightnings += size
             lt.addLast(lst, item)
     return lst
-
+def Construct_Oldest_Table(catalog):
+    oldestdate = om.minKey(catalog['dateIndex'])
+    entry = om.get(catalog['dateIndex'], oldestdate)
+    oldest = me.getValue(entry)
+    oldestsize= lt.size(oldest)
+    oldtable=PrettyTable()
+    oldtable.field_names = ['date', 'count']
+    oldtable.align='l'
+    oldtable._max_width= {'date': 15,'count':15}
+    oldtable.add_row([str(oldestdate),oldestsize])
+    return oldtable
+def Construct_Dates_Table(catalog, rangekeys):
+    numberofsightnings = 0
+    maintable=PrettyTable()
+    maintable.field_names = ['datetime','city','state','country','shape', 'duration (seconds)']
+    maintable.align='l'
+    maintable._max_width= {'datetime': 20,'city':20,'state':20,'country':20,'shape':20, 'duration (seconds)':20}
+    for item in lt.iterator(rangekeys):
+        entry = om.get(catalog['dateIndex'], item)
+        sightning = me.getValue(entry)
+        for element in lt.iterator(sightning):
+            numberofsightnings+=1
+            shape = element['shape']
+            if shape == '':
+                shape = 'Unknown'
+            maintable.add_row([str(element['datetime']), str(element['city']), str(element['state']), str(element['country']), shape ,str(element['duration (seconds)'])])
+    return maintable, numberofsightnings
 #Req 5
 
-def longitudecmp(longitude, minimum, maximum):
+def latitudecmp(longitude, minimum, maximum):
     modlongitude = round(float(longitude), 2)
     return (abs(modlongitude)>abs(minimum)) and (abs(modlongitude)<abs(maximum))
+def longitudecmp(long1,long2):
+    return long1 < long2
 def rangelongitude(keys, catalog,minlong,maxlong,minlat,maxlat,cmp):
     list=lt.newList('ARRAY_LIST', cmpfunction=None)
-    numbersightnings =0
     for item in lt.iterator(keys):
         dictionary = OrderedDict()
         if item != '':
-            if cmp(float(item), minlong,maxlong,):
-                entry = om.get(catalog['longitudeIndex'], item)
-                sightning = me.getValue(entry)
-                latkeys= om.keySet(sightning)
-                dictionary['longitude']=item
-                for latitude in lt.iterator(latkeys):
-                    if latitude != '':
-                        if cmp(float(latitude), minlat,maxlat):
-                            dictionary['latitude']=latitude
+            if cmp(float(item), minlat,maxlat,):
+                longkeys =Return_Values_and_Keys(catalog['latitudeIndex'],item, False)
+                dictionary['latitude']=item
+                for longitude in lt.iterator(longkeys):
+                    if longitude != '':
+                        if cmp(float(longitude), minlong,maxlong):
+                            dictionary['longitude']=longitude
                             lt.addLast(list, dictionary)
-                            numbersightnings += 1
     return list
-
+def Construct_Longitude_Table(catalog, pairs):
+    maintable=PrettyTable()
+    maintable.field_names = ['datetime','city','state','country','shape', 'duration (seconds)', 'latitude', 'longitude']
+    maintable.align='l'
+    maintable._max_width= {'datetime': 20,'city':20,'state':20,'country':20,'shape':20, 'duration (seconds)':20,'latitude':20, 'longitude':20}
+    numberofsightnings=0
+    for item in lt.iterator(pairs):
+        entrylat = om.get(catalog['latitudeIndex'], item['latitude'])
+        longmap = me.getValue(entrylat)
+        entrylong = om.get(longmap, item['longitude'])
+        sightnings = me.getValue(entrylong)
+        for avistamiento in lt.iterator(sightnings):
+            numberofsightnings+=1
+            shape = avistamiento['shape']
+            if shape == '':
+                shape = 'Unknown'
+            maintable.add_row([str(avistamiento['datetime']), str(avistamiento['city']), str(avistamiento['state']), str(avistamiento['country']), shape ,str(avistamiento['duration (seconds)']), round(float(avistamiento['latitude']),2),round(float(avistamiento['longitude']),2)])
+    return maintable, numberofsightnings
 # Funciones de consulta
 
 # Funciones utilizadas para comparar elementos dentro de una lista

@@ -24,9 +24,9 @@ import config as cf
 import model
 import csv
 from datetime import datetime
-from DISClib.Algorithms.Sorting import quicksort as qck
+from DISClib.Algorithms.Sorting import mergesort as mrg
 from DISClib.ADT import list as lt
-from DISClib.Algorithms.Sorting import shellsort as shl
+
 """
 El controlador se encarga de mediar entre la vista y el modelo.
 """
@@ -36,7 +36,7 @@ def init():
     return catalog
 # Funciones para la carga de datos
 def loadSightnings(catalog):
-    UFOSfile = cf.data_dir + 'UFOS-utf8-5pct.csv'
+    UFOSfile = cf.data_dir + 'UFOS-utf8-small.csv'
     input_file = csv.DictReader(open(UFOSfile, encoding="utf-8"),
                                 delimiter=",")
     for sightning in input_file:
@@ -47,12 +47,9 @@ def loadCityIndex(catalog):
 def loadDateIndex(catalog):
     for sightning in lt.iterator(catalog['sightnings']):
         model.updateDateIndex(catalog, sightning)
-def loadFullDateIndex(catalog,):
+def loadLatitudeIndex(catalog):
     for sightning in lt.iterator(catalog['sightnings']):
-        model.updateFullDateIndex(catalog, sightning)
-def loadLongitudeIndex(catalog):
-    for sightning in lt.iterator(catalog['sightnings']):
-        model.updateLongitude(catalog, sightning)
+        model.updateLatitude(catalog, sightning)
 def loadtimeIndex(catalog):
     for sightning in lt.iterator(catalog['sightnings']):
         model.addtime(catalog, sightning)
@@ -64,8 +61,7 @@ def loadAll(catalog):
     loadSightnings(catalog)
     loadCityIndex(catalog)
     loadDateIndex(catalog)
-    loadLongitudeIndex(catalog)
-    loadFullDateIndex(catalog)
+    loadLatitudeIndex(catalog)
     loadtimeIndex(catalog)
     loadDurationIndex(catalog)
 #Req 1
@@ -77,6 +73,12 @@ def calldatecmp(date1,date2):
     return condition
 def mostsight(catalog,keys):
     return model.mostsight(catalog,keys)
+def KeysandSizes(catalog, city):
+    return model.KeysandSizes(catalog, city)
+def Construct_Cities_Tables(dateIndexkeys,dateIndex):
+    return model.Construct_Cities_Tables(dateIndexkeys,dateIndex)
+def Construct_Max_Table(max, maxcity):
+    return model. Construct_Max_Table(max, maxcity)
 #Req 2
 def getmax(catalog):
     return model.getmax(catalog)
@@ -141,6 +143,10 @@ def callrangekeys(keys,catalog,start,end, cmp):
     else:
         condition = 'No sightnings found in range'
     return condition
+def Construct_Oldest_Table(catalog):
+    return model.Construct_Oldest_Table(catalog)
+def Construct_Dates_Table(catalog, rangekeys):
+    return model.Construct_Dates_Table(catalog, rangekeys)
 #Req 5
 def callsortlongitude(long1,long2):
     if long1 != '' and long2 != '':
@@ -148,11 +154,17 @@ def callsortlongitude(long1,long2):
     else:
         condition=False
     return condition
-def callLongitudecmp(longitude, minimum, maximum):
+def callLatitudecmp(longitude, minimum, maximum):
     if type(longitude) != str:
-        condition = model.longitudecmp(longitude, minimum, maximum)
+        condition = model.latitudecmp(longitude, minimum, maximum)
     else:
         condition=False
+    return condition
+def longitudecmp(lat1,lat2):
+    if lat1 !='' and lat2 != '':
+        condition = model.longitudecmp(abs(float(lat1['latitude'])), abs(float(lat1['latitude'])))
+    else:
+        condition = False
     return condition
 def callrangelongitude(keys, catalog,minlong,maxlong,minlat,maxlat, cmp):
     if keys != None:
@@ -160,9 +172,9 @@ def callrangelongitude(keys, catalog,minlong,maxlong,minlat,maxlat, cmp):
     else:
         condition = 'No sightnings found in range'
     return condition
+def Construct_Longitude_Table(catalog, pairs):
+    return model.Construct_Longitude_Table(catalog, pairs)
 # Funciones de ordenamiento
-def quicksort(catalog,cmpfunction):
-    return qck.sort(catalog,cmpfunction)
-def shellsort(catalog, cmpfunction):
-    return shl.sort(catalog,cmpfunction)
+def mergesort(catalog, cmp):
+    return mrg.sort(catalog, cmp)
 # Funciones de consulta sobre el catálogo
