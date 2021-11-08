@@ -32,6 +32,7 @@ from DISClib.ADT import map as mp
 from DISClib.ADT import orderedmap as om
 from DISClib.DataStructures import mapentry as me
 from DISClib.Algorithms.Sorting import shellsort as sa
+from DISClib.Algorithms.Sorting import mergesort as merge
 from datetime import datetime
 assert cf
 
@@ -49,7 +50,8 @@ def newCatalog():
     catalog['longitudeIndex'] = om.newMap(omaptype='RBT', comparefunction=compareLongitude)
     catalog['fulldateIndex']=om.newMap(omaptype='RBT', comparefunction=comparefullDates)
     catalog['timeIndex']=om.newMap(omaptype='RBT', comparefunction=comparetime)
-    catalog['DurationIndex']=om.newMap(omaptype='RBT')#, comparefunction = compareDurations)
+    catalog['DurationIndexmax']=om.newMap(omaptype='RBT')#, comparefunction = compareDurations)
+    catalog['DurationIndexmin']=om.newMap(omaptype='RBT')
     catalog['Dtimes'] = om.newMap(omaptype ='RBT')
     return catalog
 
@@ -139,15 +141,29 @@ def updateLongitude(catalog, sightning):
 
 def loadDurationIndex(catalog, sightning):
     duration= float(sightning['duration (seconds)'])
-    entry = om.get(catalog['DurationIndex'], duration)
+    entry = om.get(catalog['DurationIndexmax'], duration)
     #key = sightning['country']
     if entry is None:
-        DurationIndex = lt.newList('SINGLE_LINKED', cmpfunction= comparestrings)
-        om.put(catalog['DurationIndex'], duration, DurationIndex)
+        DurationIndex = lt.newList('SINGLE_LINKED')
+        lt.addLast(DurationIndex, sightning)
+        om.put(catalog['DurationIndexmax'], duration, DurationIndex)
     else:
         DurationIndex = me.getValue(entry)
         lt.addLast(DurationIndex, sightning)
+
     loadDtimes(catalog, duration)
+
+def loadDurationIndexmin(catalog, sightning):
+    duration= float(sightning['duration (seconds)'])
+    entry1 = om.get(catalog['DurationIndexmin'], duration)
+    #key = sightning['country']
+    if entry1 is None:
+        DurationIndex = lt.newList('SINGLE_LINKED')
+        lt.addLast(DurationIndex, sightning)
+        om.put(catalog['DurationIndexmin'], duration, DurationIndex)
+    else:
+        DurationIndex = me.getValue(entry1)
+        lt.addLast(DurationIndex, sightning)
 
 def loadDtimes(catalog,duration):
     val = 1
@@ -158,6 +174,30 @@ def loadDtimes(catalog,duration):
         entry = om.get(catalog['Dtimes'], float(duration))
         val = me.getValue(entry) +1
         om.put(catalog['Dtimes'], float(duration), conditional)
+    
+def sortDurationIndexmax(catalog):
+    llaves = om.keySet(catalog['DurationIndexmax'])
+    for llave in lt.iterator(llaves):
+        entry = om.get(catalog['DurationIndexmax'], llave)
+        durationlt = me.getValue(entry)
+        durationlt =merge.sort(durationlt, comparestrings)
+        #om.put(catalog['DurationIndex'], llave, durationlt)
+
+def sortDurationIndexmin(catalog, high):
+    llaves = om.keySet(catalog['DurationIndexmax'])
+    for llave in lt.iterator(llaves):
+        if llave == om.floor(catalog['DurationIndexmin'], high):
+            entry1 = om.get(catalog['DurationIndexmin'], llave)
+            durationltmin = me.getValue(entry1)
+            durationltmin =merge.sort(durationltmin, comparestrings)
+        elif llave < om.maxKey(catalog['DurationIndexmax']):
+            entry1 = om.get(catalog['DurationIndexmin'], llave)
+            durationltmin = me.getValue(entry1)
+            durationltmin =merge.sort(durationltmin, comparestringsmin)
+        
+
+    
+    
 # Funciones para creacion de datos
 
 #Req 1
@@ -187,7 +227,14 @@ def getmax(catalog):
     return me.getKey(entry),me.getValue(entry)
 
 def getinterval(catalog, low, high):
-    return om.values(catalog['DurationIndex'], low, high)
+    return om.values(catalog['DurationIndexmax'], low, high), om.values(catalog['DurationIndexmin'], low, high) 
+    '''
+    values = om.valueSet(catalog['DurationIndex'])
+    total = 0
+    for value in lt.iterator(values):
+        total += lt.size(value)
+    return total
+    '''
 #Req 3
 def rangetimecmp(time, start,end):
     modtime=datetime.strptime(time,'%H:%M')
@@ -241,15 +288,29 @@ def rangelongitude(keys, catalog,minlong,maxlong,minlat,maxlat,cmp):
 
 # Funciones utilizadas para comparar elementos dentro de una lista
 def comparestrings(one, two):
+    
     if one['country']< two['country']:
-        return one
+        return True
     elif one['country']> two['country']:
-        return two
+        return False
     elif one['country'] ==two['country']:
         if one['city']<two['city']:
-            return one
-        else:
-            return two
+            return True
+        if one['city']>=two['city']:
+            return False
+        
+def comparestringsmin(one, two):
+    
+    if one['country']> two['country']:
+        return True
+    elif one['country']< two['country']:
+        return False
+    elif one['country'] ==two['country']:
+        if one['city']>two['city']:
+            return True
+        if one['city']<=two['city']:
+            return False
+        
 def compareDurations(duration1, duration2):
     duration2 = float(duration2)
     duration1 = float(duration1)

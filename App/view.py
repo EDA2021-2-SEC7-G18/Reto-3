@@ -20,6 +20,7 @@
  * along withthis program.  If not, see <http://www.gnu.org/licenses/>.
  """
 
+from io import IncrementalNewlineDecoder
 import config as cf
 import sys
 import controller
@@ -109,13 +110,21 @@ while True:
                 print(maintable.get_string(start=(numberofsightnings)-3, end=numberofsightnings))
         print("--- %s seconds ---" % (time.time() - start_time))
     elif int(inputs[0]) == 3:
+        
+        #print(om.get(catalog['DurationIndex'], 1))
+        
         max = controller.getmax(catalog)
         low = float(input("Ingrese la duracion desde la que quiere buscar en segundos: "))
-        high = float(input("Ingrese la duracion hasta la que quiere buscar en segundos: "))
+        high = float(input("Ingrese la duracion hasta la que quiere buscar en segundos: ")) 
         stime = time.time()
-        interval = controller.getinterval(catalog, low, high)
-        primeros = controller.getfirstlast(interval)[0]
-        ultimos = controller.getfirstlast(interval)[1]
+        intervalmax, intervalmin = controller.getinterval(catalog, low, high)
+        #print(intervalmax)
+        controller.sortDurationIndex(catalog, high)
+
+        #print(om.get(catalog['DurationIndexmin'], 150))
+        primeros, ultimos, elementoslista = controller.getfirstlast(intervalmax, intervalmin)
+        #print(ultimos)
+        #'''
         greatestduration = PrettyTable()
         greatestduration.field_names = ['Duracion', 'Veces']
         greatestduration.add_row([str(max[0]), str(max[1])])
@@ -123,12 +132,15 @@ while True:
         sightningsbyduration.field_names=['posicion','datetime','city','country','shape', 'duration (seconds)']
         sightningsbyduration.add_rows(primeros)
         sightningsbyduration.add_rows(ultimos)
+        print(str(elementoslista) + ' elementos en el rango')
         print('El numero de veces que aparece la mayor duracion es: ')
         print(greatestduration)
         print('Primeros 3 y ultimos 3 avistamientos en el rango de duracion: ')
         print(sightningsbyduration)
         print("--- %s seconds ---" % (time.time() - stime))
+        #'''
 
+        
     elif int(inputs[0]) == 4:
         starttime= str(input('Ingrese la hora inicial '))
         starttime=datetime.strptime(starttime, '%H:%M')
