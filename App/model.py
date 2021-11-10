@@ -293,7 +293,7 @@ def rangekeys(keys,catalog,start, end, cmp):
     lst = lt.newList('ARRAY_LIST')
     for item in lt.iterator(keys):
         if cmp(item, start,end):
-            size = Return_Size(catalog['dateIndex'], item)
+            size = Return_List_Size(catalog['dateIndex'], item)
             numerosightnings += size
             lt.addLast(lst, item)
     return lst
