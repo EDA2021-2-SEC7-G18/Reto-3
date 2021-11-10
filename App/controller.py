@@ -75,8 +75,8 @@ def mostsight(catalog,keys):
     return model.mostsight(catalog,keys)
 def KeysandSizes(catalog, city):
     return model.KeysandSizes(catalog, city)
-def Construct_Cities_Tables(dateIndexkeys,dateIndex):
-    return model.Construct_Cities_Tables(dateIndexkeys,dateIndex)
+def Construct_Cities_Tables(sorteddate):
+    return model.Construct_Cities_Tables(sorteddate)
 def Construct_Max_Table(max, maxcity):
     return model. Construct_Max_Table(max, maxcity)
 #Req 2
@@ -111,13 +111,22 @@ def callsorttimecmp(date1,date2):
     else:
         condition =False
     return condition
-def callrangetime(keys,start,end, cmp):
+def callrangetime(catalog,keys,start,end, cmp):
     if keys != None:
-        condition = model.rangetime(keys,start,end,cmp)
+        condition = model.rangetime(catalog,keys,start,end,cmp)
     else:
         condition = 'No sightnings found in range'
     return condition
-
+def timecmp(time1, time2):
+    if time1 != '' and time2 !='':
+        condition = model.timecmp(time1, time2)
+    else:
+        condition=False
+    return condition
+def Construct_Oldest_Time_Table(catalog):
+    return model.Construct_Oldest_Time_Table(catalog)
+def Construct_Time_Table(catalog, rangekeys, cmp, numberofsightnings):
+    return model.Construct_Time_Table(catalog, rangekeys,cmp, numberofsightnings)
 def callrangetimecmp(time, start,end):
     if time!='':
         condition=model.rangetimecmp(time,start,end)
