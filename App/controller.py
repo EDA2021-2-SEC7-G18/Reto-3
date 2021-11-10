@@ -24,6 +24,7 @@ import config as cf
 import model
 import csv
 from datetime import datetime
+from DISClib.Algorithms.Sorting import quicksort as qck
 from DISClib.Algorithms.Sorting import mergesort as mrg
 from DISClib.ADT import list as lt
 
@@ -36,7 +37,7 @@ def init():
     return catalog
 # Funciones para la carga de datos
 def loadSightnings(catalog):
-    UFOSfile = cf.data_dir + 'UFOS-utf8-small.csv'
+    UFOSfile = cf.data_dir + 'UFOS-utf8-large.csv'
     input_file = csv.DictReader(open(UFOSfile, encoding="utf-8"),
                                 delimiter=",")
     for sightning in input_file:
@@ -56,6 +57,9 @@ def loadtimeIndex(catalog):
 def loadDurationIndex(catalog):
     for sightning in lt.iterator(catalog['sightnings']):
         model.loadDurationIndex(catalog, sightning)
+def loadDurationIndexmin(catalog):
+    for sightning in lt.iterator(catalog['sightnings']):
+        model.loadDurationIndexmin(catalog, sightning)
 
 def loadAll(catalog):
     loadSightnings(catalog)
@@ -64,6 +68,8 @@ def loadAll(catalog):
     loadLatitudeIndex(catalog)
     loadtimeIndex(catalog)
     loadDurationIndex(catalog)
+    loadDurationIndexmin(catalog)
+    #sortDurationIndex(catalog)
 #Req 1
 def calldatecmp(date1,date2):
     if date1 != '' and date2 != '':
@@ -84,26 +90,37 @@ def getmax(catalog):
     return model.getmax(catalog)
 
 def getinterval(catalog, low, high):
-    return model.getinterval(catalog, low, high)
+    return model.getinterval(catalog, low, high)[0],model.getinterval(catalog, low, high)[1]
+    #return lt.size(catalog['sightnings'])
 
-def getfirstlast(interval):
+def getfirstlast(interval, intervalmin):
     primeros = []
     ultimos = []
-    lista = lt.newList('ARRAY_LIST')
+    listamax = lt.newList('ARRAY_LIST')
+    listamin = lt.newList('ARRAY_LIST')
     for duration in lt.iterator(interval):
         for elemento in lt.iterator(duration):
-            lt.addLast(lista, elemento)
+            lt.addLast(listamax, elemento)
+
+    for duration in lt.iterator(intervalmin):
+        for elemento in lt.iterator(duration):
+            lt.addLast(listamin, elemento)
+
     for i in range(1,4):
-        complete = lt.getElement(lista, i)
+        complete = lt.getElement(listamax, i)
         elemento = [i, complete['datetime'], complete['city'], complete['country'], complete['shape'], complete['duration (seconds)']]
         primeros.append(elemento)
         
-    for i in range(lt.size(lista)-2,lt.size(lista) + 1):
-        complete = lt.getElement(lista, i)
+    for i in range(lt.size(listamin)-2,lt.size(listamin) + 1):
+        complete = lt.getElement(listamin, i)
         elemento = [i, complete['datetime'], complete['city'], complete['country'], complete['shape'], complete['duration (seconds)']]
         ultimos.append(elemento)
 
-    return primeros, ultimos
+    return primeros, ultimos, lt.size(listamax)
+
+def sortDurationIndex(catalog, high):
+    model.sortDurationIndexmax(catalog)
+    model.sortDurationIndexmin(catalog, high)
 #Req 3
 def callsorttimecmp(date1,date2):
     if date1 != '' and date2 !='':
