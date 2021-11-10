@@ -160,60 +160,68 @@ def Return_Values_and_Keys(catalog, variable, conditional):
     else:
         result = newkeys
     return result
-def Return_Size(catalog, variable):
+def Return_OM_Size(catalog, variable):
     entry=om.get(catalog, variable)
     value=me.getValue(entry)
-    if type(value) == dict:
-        size = lt.size(value)
-    else: 
-        size = om.size(value)
+    size = om.size(value)
+    return size
+def Return_List_Size(catalog, variable):
+    entry=om.get(catalog, variable)
+    value=me.getValue(entry)
+    size = lt.size(value)
     return size
 def datecmp(date1, date2):
-    return datetime.strptime(date1, '%Y-%m-%d %H:%M:%S') < datetime.strptime(date2,'%Y-%m-%d %H:%M:%S')
+    return datetime.strptime(date1['datetime'], '%Y-%m-%d %H:%M:%S') < datetime.strptime(date2['datetime'],'%Y-%m-%d %H:%M:%S')
+
 def mostsight(catalog,keys):
     max=0
     maxcity=''
     for variable in lt.iterator(keys):
-        value, cities= Return_Values_and_Keys(catalog['cityIndex'], variable, True)
-        counter=0
-        for city in lt.iterator(cities):
-            size= Return_Size(value, city)
-            counter+=size
-            if counter > max:
-                max=counter
-                maxcity= variable
+        counter = 0
+        size= Return_List_Size(catalog['cityIndex'], variable)
+        counter+=size
+        if counter > max:
+            max=counter
+            maxcity= variable
+    return max, maxcity
+def mostsight1(catalog,keys):
+    max=0
+    maxcity=''
+    for variable in lt.iterator(keys):
+        size= Return_OM_Size(catalog['cityIndex'], variable)
+        counter=size
+        if counter > max:
+            max=counter
+            maxcity= variable
     return max, maxcity
 def KeysandSizes(catalog, city):
     entry = om.get(catalog['cityIndex'], city)
     dateIndex = me.getValue(entry)
-    size=om.size(dateIndex)
+    size=lt.size(dateIndex)
     citykeys=om.keySet(catalog['cityIndex'])
     totalsize=om.size(catalog['cityIndex'])
-    dateIndexkeys = om.keySet(dateIndex)
-    return size, citykeys, totalsize, dateIndex, dateIndexkeys
+    return size, citykeys, totalsize, dateIndex
 
-def Construct_Cities_Tables(dateIndexkeys,dateIndex):
-    numberofsightnings=0
+def Construct_Cities_Tables(sorteddate):
     maintable=PrettyTable()
     maintable.field_names = ['datetime','city','state','country','shape', 'duration (seconds)']
     maintable.align='l'
     maintable._max_width= {'datetime': 20,'city':20,'state':20,'country':20,'shape':20, 'duration (seconds)':20}
-    for item in lt.iterator(dateIndexkeys):
-        entry = om.get(dateIndex, item)
-        sightning = me.getValue(entry)
-        for element in lt.iterator(sightning):
-            numberofsightnings+=1
-            shape = element['shape']
-            if shape == '':
-                shape = 'Unknown'
-            maintable.add_row([str(element['datetime']), str(element['city']), str(element['state']), str(element['country']), shape ,str(element['duration (seconds)'])])
-    return maintable, numberofsightnings
+    for element in lt.iterator(sorteddate):
+        shape = element['shape']
+        if shape == '':
+            shape = 'Unknown'
+        maintable.add_row([str(element['datetime']), str(element['city']), str(element['state']), str(element['country']), shape ,str(element['duration (seconds)'])])
+    return maintable
+
 def Construct_Max_Table(max, maxcity):
-        newtable=PrettyTable()
-        newtable.field_names = ['city','sightings']
-        newtable.align='l'
-        newtable._max_width= {'city':20,'sightings':20}
-        newtable.add_row([str(maxcity), str(max)])
+    newtable=PrettyTable()
+    newtable.field_names = ['city','sightings']
+    newtable.align='l'
+    newtable._max_width= {'city':20,'sightings':20}
+    newtable.add_row([str(maxcity), str(max)])
+    return newtable
+
 #Req 2
 def getmax(catalog):
     entry =om.get(catalog['Dtimes'],om.maxKey(catalog['Dtimes']))
