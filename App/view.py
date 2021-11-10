@@ -67,36 +67,16 @@ while True:
         catalog=initCatalog()
         loadAll(catalog)
         print("--- %s seconds ---" % (time.time() - start_time))
+
     elif int(inputs[0]) == 2:
         city=str(input('Enter the city you want to consult'))
         start_time=time.time()
         datecmp =controller.calldatecmp
-        entry = om.get(catalog['cityIndex'], city)
-        dateIndex = me.getValue(entry)
-        size=om.size(dateIndex)
-        citykeys=om.keySet(catalog['cityIndex'])
-        totalsize=om.size(catalog['cityIndex'])
-        keys = om.keySet(dateIndex)
+        size, citykeys, totalsize, dateIndex, dateIndexkeys= controller.KeysandSizes(catalog, city)
         max,maxcity= controller.mostsight(catalog, citykeys)
         numberofsightnings = 0
-        newtable=PrettyTable()
-        newtable.field_names = ['city','sightings']
-        newtable.align='l'
-        newtable._max_width= {'city':20,'sightings':20}
-        newtable.add_row([str(maxcity), str(max)])
-        maintable=PrettyTable()
-        maintable.field_names = ['datetime','city','state','country','shape', 'duration (seconds)']
-        maintable.align='l'
-        maintable._max_width= {'datetime': 20,'city':20,'state':20,'country':20,'shape':20, 'duration (seconds)':20}
-        for item in lt.iterator(keys):
-            entry = om.get(dateIndex, item)
-            sightning = me.getValue(entry)
-            for element in lt.iterator(sightning):
-                numberofsightnings+=1
-                shape = element['shape']
-                if shape == '':
-                    shape = 'Unknown'
-                maintable.add_row([str(element['datetime']), str(element['city']), str(element['state']), str(element['country']), shape ,str(element['duration (seconds)'])])
+        newtable = controller.Construct_Max_Table(max, maxcity)
+        maintable, numberofsightnings = controller.Construct_Cities_Tables(dateIndexkeys,dateIndex)
         print('There are ', totalsize, 'different cities with UFO sightings')
         print('The city with most UFO sightings is: ')
         print(newtable)
@@ -109,7 +89,9 @@ while True:
             else:
                 print(maintable.get_string(start=(numberofsightnings)-3, end=numberofsightnings))
         print("--- %s seconds ---" % (time.time() - start_time))
+
     elif int(inputs[0]) == 3:
+
         
         #print(om.get(catalog['DurationIndex'], 1))
         
@@ -195,6 +177,7 @@ while True:
             else:
                 print(maintable.get_string(start=(numberofsightnings)-3, end=numberofsightnings))
         print("--- %s seconds ---" % (time.time() - start_time))
+
     elif int(inputs[0]) == 5:
         startdate=str(input('Ingrese la fecha inicial '))
         startdate=datetime.strptime(startdate,'%Y-%m-%d')
@@ -204,29 +187,8 @@ while True:
         keys = om.keySet(catalog['dateIndex'])
         cmp = controller.callrangecmp
         rangekeys = controller.callrangekeys(keys,catalog,startdate,enddate,cmp)
-        numberofsightnings =0
-        oldestdate = om.minKey(catalog['dateIndex'])
-        entry = om.get(catalog['dateIndex'], oldestdate)
-        oldest = me.getValue(entry)
-        oldestsize= lt.size(oldest)
-        oldtable=PrettyTable()
-        oldtable.field_names = ['date', 'count']
-        oldtable.align='l'
-        oldtable._max_width= {'date': 15,'count':15}
-        oldtable.add_row([str(oldestdate),oldestsize])
-        maintable=PrettyTable()
-        maintable.field_names = ['datetime','city','state','country','shape', 'duration (seconds)']
-        maintable.align='l'
-        maintable._max_width= {'datetime': 20,'city':20,'state':20,'country':20,'shape':20, 'duration (seconds)':20}
-        for item in lt.iterator(rangekeys):
-            entry = om.get(catalog['dateIndex'], item)
-            sightning = me.getValue(entry)
-            for element in lt.iterator(sightning):
-                numberofsightnings+=1
-                shape = element['shape']
-                if shape == '':
-                    shape = 'Unknown'
-                maintable.add_row([str(element['datetime']), str(element['city']), str(element['state']), str(element['country']), shape ,str(element['duration (seconds)'])])
+        oldtable = controller.Construct_Oldest_Table(catalog)
+        maintable, numberofsightnings = controller.Construct_Dates_Table(catalog,rangekeys)
         difsight=om.size(catalog['dateIndex'])
         print('\nThere are',difsight,'UFO sightnings with different dates [YYYY-MM-DD]..')
         print('The oldest UFO sightnings date is:')
@@ -240,35 +202,22 @@ while True:
             else:
                 print(maintable.get_string(start=(numberofsightnings)-3, end=numberofsightnings))
         print("--- %s seconds ---" % (time.time() - start_time))
+
     elif int(inputs[0]) == 6:
-        minlong=float(input('Ingrese la longitud minima'))
-        minlong = round(minlong, 2)
-        maxlong = float(input('Ingrese la longitud maxima'))
-        maxlong = round(maxlong, 2)
         minlat=float(input('Ingrese la latitud minima'))
         minlat = round(minlat, 2)
         maxlat=float(input('Ingrese la latitud maxima'))
         maxlat = round(maxlat,2)
+        minlong=float(input('Ingrese la longitud minima'))
+        minlong = round(minlong, 2)
+        maxlong = float(input('Ingrese la longitud maxima'))
+        maxlong = round(maxlong, 2)
         start_time=time.time()
-        keys=om.keySet(catalog['longitudeIndex'])
-        longcmp=controller.callLongitudecmp
-        pairs=controller.callrangelongitude(keys, catalog,minlong,maxlong, minlat,maxlat,longcmp)
-        maintable=PrettyTable()
-        maintable.field_names = ['datetime','city','state','country','shape', 'duration (seconds)', 'longitude', 'latitude']
-        maintable.align='l'
-        maintable._max_width= {'datetime': 20,'city':20,'state':20,'country':20,'shape':20, 'duration (seconds)':20,'longitude':20, 'latitude':20}
-        numberofsightnings=0
-        for item in lt.iterator(pairs):
-            entrylong = om.get(catalog['longitudeIndex'], item['longitude'])
-            latmap = me.getValue(entrylong)
-            entrylat = om.get(latmap, item['latitude'])
-            sightnings = me.getValue(entrylat)
-            for avistamiento in lt.iterator(sightnings):
-                numberofsightnings+=1
-                shape = avistamiento['shape']
-                if shape == '':
-                    shape = 'Unknown'
-                maintable.add_row([str(avistamiento['datetime']), str(avistamiento['city']), str(avistamiento['state']), str(avistamiento['country']), shape ,str(avistamiento['duration (seconds)']), round(float(avistamiento['longitude']),2), round(float(avistamiento['latitude']),2)])
+        keys=om.keySet(catalog['latitudeIndex'])
+        latcmp=controller.callLatitudecmp
+        pairs=controller.callrangelongitude(keys, catalog,minlong,maxlong, minlat,maxlat,latcmp)
+        longitudecmp = controller.longitudecmp
+        maintable, numberofsightnings = controller.Construct_Longitude_Table(catalog, pairs)
         print('There are',numberofsightnings,' sightnings between longitude: ', minlong, 'and', maxlong, ' and latitude: ', minlat, 'and', maxlat, '\n')
         print('the first and last 5 UFO sightnings in this area are:')
         print(maintable.get_string(start=0, end=5))
