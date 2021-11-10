@@ -223,22 +223,67 @@ def Construct_Max_Table(max, maxcity):
     return newtable
 
 #Req 2
-def getmax(catalog):
-    entry =om.get(catalog['Dtimes'],om.maxKey(catalog['Dtimes']))
-    return me.getKey(entry),me.getValue(entry)
-
-def getinterval(catalog, low, high):
-    return om.values(catalog['DurationIndex'], low, high)
-#Req 3
 def rangetimecmp(time, start,end):
     modtime=datetime.strptime(time,'%H:%M')
     return (modtime>=start) and (modtime<=end)
-def rangetime(keys,start, end, cmp):
+def rangetime(catalog,keys,start, end, cmp):
     lst = lt.newList('ARRAY_LIST', cmpfunction=None)
+    numberofsightnings=0
     for item in lt.iterator(keys):
         if cmp(item, start,end):
+            entry = om.get(catalog['timeIndex'], item)
+            value= me.getValue(entry)
+            numberofsightnings+=lt.size(value)
             lt.addLast(lst, item)
-    return lst   
+    return lst, numberofsightnings
+def timecmp(time1, time2):
+    return datetime.strptime(time1['datetime'],'%Y-%m-%d %H:%M:%S')<datetime.strptime(time2['datetime'],'%Y-%m-%d %H:%M:%S')
+def Construct_Oldest_Time_Table(catalog):
+    oldestdate = om.maxKey(catalog['timeIndex'])
+    entry = om.get(catalog['timeIndex'], oldestdate)
+    oldest = me.getValue(entry)
+    oldestsize=lt.size(oldest)
+    oldtable=PrettyTable()
+    oldtable.field_names = ['date', 'count']
+    oldtable.align='l'
+    oldtable._max_width= {'date': 15,'count':15}
+    oldtable.add_row([str(oldestdate),str(oldestsize)])
+    return oldtable
+def Construct_Time_Table(catalog, rangekeys,cmp, numberofsightnings):
+    maintable=PrettyTable()
+    maintable.field_names = ['datetime','city','state','country','shape', 'duration (seconds)']
+    maintable.align='l'
+    maintable._max_width= {'datetime': 20,'city':20,'state':20,'country':20,'shape':20, 'duration (seconds)':20}
+    counter = 0
+    for item in lt.iterator(rangekeys):
+        entry = om.get(catalog['timeIndex'], item)
+        sightning = me.getValue(entry)
+        sortedkeys = controller.mergesort(sightning, cmp)
+        for element in lt.iterator(sortedkeys):
+            shape = element['shape']
+            if shape == '':
+                shape = 'Unknown'
+            maintable.add_row([str(element['datetime']), str(element['city']), str(element['state']), str(element['country']), shape ,str(element['duration (seconds)'])])
+            counter +=1
+            if counter >=3:
+                break
+    endtable=PrettyTable()
+    endtable.field_names = ['datetime','city','state','country','shape', 'duration (seconds)']
+    endtable.align='l'
+    endtable._max_width= {'datetime': 20,'city':20,'state':20,'country':20,'shape':20, 'duration (seconds)':20}
+    if  numberofsightnings> 3:
+        endtablesize = 0
+        sublst= lt.subList(rangekeys, lt.size(rangekeys)-2,3)
+        for item in lt.iterator(sublst):
+            entry = om.get(catalog['timeIndex'], item)
+            sightning = me.getValue(entry)
+            endtablesize+=lt.size(sightning)
+            for element in lt.iterator(sightning):
+                shape = element['shape']
+                if shape == '':
+                    shape = 'Unknown'
+                endtable.add_row([str(element['datetime']), str(element['city']), str(element['state']), str(element['country']), shape ,str(element['duration (seconds)'])])
+    return maintable, endtable, endtablesize
 
 #Req 4
 def rangecmp(date, start, end):
