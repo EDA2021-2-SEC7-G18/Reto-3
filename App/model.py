@@ -31,6 +31,7 @@ from DISClib.ADT import list as lt
 from DISClib.ADT import map as mp
 from DISClib.ADT import orderedmap as om
 from DISClib.DataStructures import mapentry as me
+import controller
 
 from datetime import datetime
 from prettytable import PrettyTable
@@ -81,14 +82,14 @@ def updateCityIndex(catalog, sightning):
     city=sightning['city']
     entry = om.get(catalog['cityIndex'], city)
     if entry is None:
-        dateIndex = om.newMap(omaptype='RBT', comparefunction=comparefullDates)
+        dateIndex = lt.newList('ARRAY_LIST', cmpfunction=None)
         om.put(catalog['cityIndex'], city, dateIndex)
     else:
         dateIndex = me.getValue(entry)
-    addDate(dateIndex, sightning)
+    lt.addLast(dateIndex, sightning)
 
 def addLongitude(longitudeIndex, sightning):
-    longitude=sightning['longitude']
+    longitude=str(round(float(sightning['longitude']), 2))
     entry = om.get(longitudeIndex, longitude)
     if entry is None:
         Data= lt.newList('ARRAY_LIST', cmpfunction=None)
@@ -96,29 +97,19 @@ def addLongitude(longitudeIndex, sightning):
     else:
         Data = me.getValue(entry)
     lt.addLast(Data, sightning)
-def addsubDate(timeIndex, sightning):
-    date=sightning['datetime']
-    entry = om.get(timeIndex, date)
-    if entry is None:
-        datelist = lt.newList('ARRAY_LIST', cmpfunction=None)
-        om.put(timeIndex, date , datelist)
-    else:
-        datelist = me.getValue(entry)
-    lt.addLast(datelist, sightning)
-
 def addtime(catalog, sightning):
     tiempo=datetime.strptime(sightning['datetime'],'%Y-%m-%d %H:%M:%S')
     modtiempo=str(tiempo.hour)+':'+str(tiempo.minute)
     entry = om.get(catalog['timeIndex'], modtiempo)
     if entry is None:
-        dateIndex = om.newMap(omaptype='RBT', comparefunction=comparefullDates)
+        dateIndex = lt.newList('ARRAY_LIST', cmpfunction=None)
         om.put(catalog['timeIndex'], modtiempo, dateIndex)
     else:
         dateIndex = me.getValue(entry)
-    addDate(dateIndex, sightning)
+    lt.addLast(dateIndex, sightning)
 
 def updateLatitude(catalog, sightning):
-    latitude= sightning['latitude']
+    latitude= str(round(float(sightning['latitude']), 2))
     entry = om.get(catalog['latitudeIndex'], latitude)
     if entry is None:
         longitudeIndex = om.newMap(omaptype='RBT', comparefunction=compareLongitude)
@@ -223,6 +214,13 @@ def Construct_Max_Table(max, maxcity):
     return newtable
 
 #Req 2
+def getmax(catalog):
+    entry =om.get(catalog['Dtimes'],om.maxKey(catalog['Dtimes']))
+    return me.getKey(entry),me.getValue(entry)
+
+def getinterval(catalog, low, high):
+    return om.values(catalog['DurationIndex'], low, high)
+#Req 3
 def rangetimecmp(time, start,end):
     modtime=datetime.strptime(time,'%H:%M')
     return (modtime>=start) and (modtime<=end)
@@ -324,8 +322,8 @@ def Construct_Dates_Table(catalog, rangekeys):
                 shape = 'Unknown'
             maintable.add_row([str(element['datetime']), str(element['city']), str(element['state']), str(element['country']), shape ,str(element['duration (seconds)'])])
     return maintable, numberofsightnings
+    
 #Req 5
-
 def latitudecmp(longitude, minimum, maximum):
     modlongitude = round(float(longitude), 2)
     return (abs(modlongitude)>abs(minimum)) and (abs(modlongitude)<abs(maximum))
