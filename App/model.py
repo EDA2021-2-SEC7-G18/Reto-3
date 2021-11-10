@@ -339,6 +339,7 @@ def rangelongitude(keys, catalog,minlong,maxlong,minlat,maxlat,cmp):
             if cmp(float(item), minlat,maxlat,):
                 longkeys =Return_Values_and_Keys(catalog['latitudeIndex'],item, False)
                 dictionary['latitude']=item
+
                 for longitude in lt.iterator(longkeys):
                     if longitude != '':
                         if cmp(float(longitude), minlong,maxlong):
