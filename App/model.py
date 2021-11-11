@@ -62,10 +62,11 @@ def addDate(dateIndex, sightning):
     entry = om.get(dateIndex, date)
     if entry is None:
         Data= lt.newList('ARRAY_LIST', cmpfunction=None)
+        lt.addLast(Data, sightning)
         om.put(dateIndex, date, Data)
     else:
         Data = me.getValue(entry)
-    lt.addLast(Data, sightning)
+        lt.addLast(Data, sightning)
 
 def updateDateIndex(catalog, sightning):
     date=datetime.strptime(sightning['datetime'], '%Y-%m-%d %H:%M:%S')
@@ -73,20 +74,22 @@ def updateDateIndex(catalog, sightning):
     entry = om.get(catalog['dateIndex'], reconstructdate)
     if entry is None:
         datelist = lt.newList('ARRAY_LIST', cmpfunction=None)
+        lt.addLast(datelist, sightning)
         om.put(catalog['dateIndex'], reconstructdate , datelist)
     else:
         datelist = me.getValue(entry)
-    lt.addLast(datelist, sightning)
+        lt.addLast(datelist, sightning)
 
 def updateCityIndex(catalog, sightning):
     city=sightning['city']
     entry = om.get(catalog['cityIndex'], city)
     if entry is None:
         dateIndex = lt.newList('ARRAY_LIST', cmpfunction=None)
+        lt.addLast(dateIndex, sightning)
         om.put(catalog['cityIndex'], city, dateIndex)
     else:
         dateIndex = me.getValue(entry)
-    lt.addLast(dateIndex, sightning)
+        lt.addLast(dateIndex, sightning)
 
 def addLongitude(longitudeIndex, sightning):
     longitude=str(round(float(sightning['longitude']), 2))
@@ -94,9 +97,10 @@ def addLongitude(longitudeIndex, sightning):
     if entry is None:
         Data= lt.newList('ARRAY_LIST', cmpfunction=None)
         om.put(longitudeIndex, longitude, Data)
+        lt.addLast(Data, sightning)
     else:
         Data = me.getValue(entry)
-    lt.addLast(Data, sightning)
+        lt.addLast(Data, sightning)
 def addtime(catalog, sightning):
     tiempo=datetime.strptime(sightning['datetime'],'%Y-%m-%d %H:%M:%S')
     modtiempo=str(tiempo.hour)+':'+str(tiempo.minute)
@@ -104,19 +108,21 @@ def addtime(catalog, sightning):
     if entry is None:
         dateIndex = lt.newList('ARRAY_LIST', cmpfunction=None)
         om.put(catalog['timeIndex'], modtiempo, dateIndex)
+        lt.addLast(dateIndex, sightning)
     else:
         dateIndex = me.getValue(entry)
-    lt.addLast(dateIndex, sightning)
+        lt.addLast(dateIndex, sightning)
 
 def updateLatitude(catalog, sightning):
     latitude= str(round(float(sightning['latitude']), 2))
     entry = om.get(catalog['latitudeIndex'], latitude)
     if entry is None:
         longitudeIndex = om.newMap(omaptype='RBT', comparefunction=compareLongitude)
+        addLongitude(longitudeIndex, sightning)
         om.put(catalog['latitudeIndex'], latitude, longitudeIndex)
     else:
         longitudeIndex = me.getValue(entry)
-    addLongitude(longitudeIndex, sightning)
+        addLongitude(longitudeIndex, sightning)
 
 def loadDurationIndex(catalog, sightning):
     duration= float(sightning['duration (seconds)'])
@@ -125,10 +131,11 @@ def loadDurationIndex(catalog, sightning):
     if entry is None:
         DurationIndex = lt.newList('SINGLE_LINKED', cmpfunction= comparestrings)
         om.put(catalog['DurationIndex'], duration, DurationIndex)
+        loadDtimes(catalog, duration)
     else:
         DurationIndex = me.getValue(entry)
         lt.addLast(DurationIndex, sightning)
-    loadDtimes(catalog, duration)
+        loadDtimes(catalog, duration)
 
 def loadDtimes(catalog,duration):
     val = 1
