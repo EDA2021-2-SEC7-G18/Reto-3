@@ -56,6 +56,10 @@ def loadtimeIndex(catalog):
 def loadDurationIndex(catalog):
     for sightning in lt.iterator(catalog['sightnings']):
         model.loadDurationIndex(catalog, sightning)
+def loadDurationIndexmin(catalog):
+    for sightning in lt.iterator(catalog['sightnings']):
+        model.loadDurationIndexmin(catalog, sightning)
+
 
 def loadAll(catalog):
     loadSightnings(catalog)
@@ -64,6 +68,8 @@ def loadAll(catalog):
     loadLatitudeIndex(catalog)
     loadtimeIndex(catalog)
     loadDurationIndex(catalog)
+    loadDurationIndexmin(catalog)
+    
 #Req 1
 def calldatecmp(date1,date2):
     if date1 != '' and date2 != '':
