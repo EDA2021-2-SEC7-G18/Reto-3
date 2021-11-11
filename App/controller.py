@@ -83,27 +83,39 @@ def Construct_Max_Table(max, maxcity):
 def getmax(catalog):
     return model.getmax(catalog)
 
-def getinterval(catalog, low, high):
-    return model.getinterval(catalog, low, high)
 
-def getfirstlast(interval):
+def getinterval(catalog, low, high):
+    return model.getinterval(catalog, low, high)[0],model.getinterval(catalog, low, high)[1]
+
+def getfirstlast(interval, intervalmin):
     primeros = []
     ultimos = []
-    lista = lt.newList('ARRAY_LIST')
+    listamax = lt.newList('ARRAY_LIST')
+    listamin = lt.newList('ARRAY_LIST')
     for duration in lt.iterator(interval):
         for elemento in lt.iterator(duration):
-            lt.addLast(lista, elemento)
+            lt.addLast(listamax, elemento)
+
+    for duration in lt.iterator(intervalmin):
+        for elemento in lt.iterator(duration):
+            lt.addLast(listamin, elemento)
+
     for i in range(1,4):
-        complete = lt.getElement(lista, i)
+        complete = lt.getElement(listamax, i)
         elemento = [i, complete['datetime'], complete['city'], complete['country'], complete['shape'], complete['duration (seconds)']]
         primeros.append(elemento)
         
-    for i in range(lt.size(lista)-2,lt.size(lista) + 1):
-        complete = lt.getElement(lista, i)
+    for i in range(lt.size(listamin)-2,lt.size(listamin) + 1):
+        complete = lt.getElement(listamin, i)
         elemento = [i, complete['datetime'], complete['city'], complete['country'], complete['shape'], complete['duration (seconds)']]
         ultimos.append(elemento)
 
-    return primeros, ultimos
+    return primeros, ultimos, lt.size(listamax)
+
+def sortDurationIndex(catalog, high):
+    model.sortDurationIndexmax(catalog)
+    model.sortDurationIndexmin(catalog, high)
+
 #Req 3
 def callsorttimecmp(date1,date2):
     if date1 != '' and date2 !='':
